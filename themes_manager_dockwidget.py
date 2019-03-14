@@ -139,6 +139,7 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
     def check_config(self):
         path = os.path.join(self.qwc2Dir_lineEdit.text(), "themesConfig.json")
         themes_config = self.read_themes_config(path)
+        config = None
         if not themes_config:
             return
 
@@ -167,10 +168,12 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
 
     def load_themes_config(self):
         config = self.check_config()
-        if not config:
+        if config is None:
             return
         for child in self.themes_tab.children():
             child.setEnabled(True)
+        self.buttonBox.button(QDialogButtonBox.Save).setEnabled(True)
+        self.buttonBox.button(QDialogButtonBox.Reset).setEnabled(True)
         self.reset_ui()
 
         if "defaultScales" in config:
@@ -376,10 +379,12 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
                                     "No open project found.")
                 return
             settings_dlg = self.theme_settings_dialog = ThemeSettingsDialog(
-                self.iface.mainWindow(), method, self.iface)
+                self.iface.mainWindow(), method, self.iface,
+                self.defaultTheme_comboBox.count())
             if settings_dlg.exec_() == 1:
                 return
             self.load_themes_config()
+            self.save_themes_config()
         else:
             theme_name = self.theme_settings_dialog = ThemeSettingsDialog(
                 self.iface.mainWindow(), method)

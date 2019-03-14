@@ -35,13 +35,15 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(
 
 class ThemeSettingsDialog(QDialog, FORM_CLASS):
 
-    def __init__(self, parent, method, iface):
+    def __init__(self, parent, method, iface, default_true):
         super(ThemeSettingsDialog, self).__init__(parent)
         self.setupUi(self)
 
         self.method = method
         self.iface = iface
+        self.default_true = default_true
         self.settings = QSettings()
+
         self.buttonBox.button(QDialogButtonBox.Apply).setText("Create")
         self.buttonBox.button(QDialogButtonBox.Apply).clicked.connect(
             self.save_theme)
@@ -87,6 +89,8 @@ class ThemeSettingsDialog(QDialog, FORM_CLASS):
                 new_theme[child_name] = child.isChecked()
         new_theme["mapCrs"] = self.mapCrs_widget.crs().authid()
         new_theme["format"] = self.format_comboBox.currentText()
+        if self.default_true == 0:
+            new_theme["default"] = True
         path = os.path.join(self.settings.value(
             "qwc2-themes-manager/qwc2_directory"), "themesConfig.json")
         try:
