@@ -26,12 +26,12 @@ import json
 from urllib.request import urlopen
 import xml.etree.ElementTree as ET
 from qgis.PyQt import uic
-from qgis.PyQt.QtWidgets import (QDockWidget, QFileDialog, QMessageBox, QGridLayout,
-                                 QDialogButtonBox, QListWidgetItem)
-from qgis.PyQt.QtCore import QSettings
+from qgis.PyQt.QtWidgets import *
+from qgis.PyQt.QtCore import *
 
-from qgis.core import QgsMessageLog, Qgis
+from qgis.core import *
 
+from .theme_settings_dialog import ThemeSettingsDialog
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'themes_manager.ui'))
@@ -68,6 +68,8 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
             lambda: self.check_list(self.defaultPrintScales_lineEdit))
         self.defaultPrintResolutions_lineEdit.textChanged.connect(
             lambda: self.check_list(self.defaultPrintResolutions_lineEdit))
+        self.addTheme_button.clicked.connect(
+            lambda: self.create_or_edit_theme("create"))
 
         self.set_qwc2_dir_path(self.settings.value(
             "qwc2-themes-manager/qwc2_directory"))
@@ -118,7 +120,7 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
 
     def read_themes_config(self, path):
         try:
-            themes_config = open(path, encoding="utf-8")
+            themes_config = open(path, "r", encoding="utf-8")
         except PermissionError:
             QMessageBox.critical(
                 None, "QWC2 Theme Manager: Permission Error",
@@ -167,6 +169,8 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
         config = self.check_config()
         if not config:
             return
+        for child in self.themes_tab.children():
+            child.setEnabled(True)
         self.reset_ui()
 
         if "defaultScales" in config:
@@ -179,18 +183,21 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
 
         if "defaultPrintResolutions" in config:
             self.defaultPrintResolutions_lineEdit.setText(
-                ",".join(str(num) for num in config["defaultPrintScales"]))
+                ",".join(str(num) for num in config[
+                    "defaultPrintResolutions"]))
 
-        self.fill_listView(config["themes"]["items"])
-        for item in config["themes"]["items"]:
-            if "default" in item.keys():
-                if "title" in item.keys():
-                    self.defaultTheme_comboBox.setCurrentText(item["title"])
-                    break
-                else:
-                    title = self.get_title_from_wms(item["url"])
-                    self.defaultTheme_comboBox.setCurrentText(title)
-                    break
+        if "themes" in config.keys():
+            self.fill_listView(config["themes"]["items"])
+            for item in config["themes"]["items"]:
+                if "default" in item.keys():
+                    if "title" in item.keys():
+                        self.defaultTheme_comboBox.setCurrentText(
+                            item["title"])
+                        break
+                    else:
+                        title = self.get_title_from_wms(item["url"])
+                        self.defaultTheme_comboBox.setCurrentText(title)
+                        break
         self.old_config = config
 
     def deactivate_themes_tab(self):
@@ -204,9 +211,19 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
         self.buttonBox.button(QDialogButtonBox.Reset).setEnabled(False)
 
     def create_themes_config(self, path):
-        themes_config = open(path, 'w')
-        themes_config.write("{}")
-        return themes_config
+        try:
+            themes_config = open(path, 'w')
+            themes_config.write("{}")
+        except PermissionError:
+            QMessageBox.critical(
+                None, "QWC2 Theme Manager: Permission Error",
+                "Cannot override themes configuration file"
+                "\nInsufficient permissions!")
+            QgsMessageLog.logMessage(
+                "Permission Error: Cannot override file: %s." % path,
+                "QWC2 Theme Manager", Qgis.Critical)
+            return
+        return open(path, 'r')
 
     def fill_listView(self, themes):
         for theme in themes:
@@ -235,19 +252,22 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
         if "defaultPrintResolutions" in self.old_config:
             self.defaultPrintResolutions_lineEdit.setText(
                 ",".join(
-                    str(num) for num in self.old_config["defaultPrintScales"]))
+                    str(num) for num in self.old_config[
+                        "defaultPrintResolutions"]))
 
         self.defaultTheme_comboBox.clear()
-        self.fill_listView(self.old_config["themes"]["items"])
-        for item in self.old_config["themes"]["items"]:
-            if "default" in item.keys():
-                if "title" in item.keys():
-                    self.defaultTheme_comboBox.setCurrentText(item["title"])
-                    break
-                else:
-                    title = self.get_title_from_wms(item["url"])
-                    self.defaultTheme_comboBox.setCurrentText(title)
-                    break
+        if "themes" in self.old_config.keys():
+            self.fill_listView(self.old_config["themes"]["items"])
+            for item in self.old_config["themes"]["items"]:
+                if "default" in item.keys():
+                    if "title" in item.keys():
+                        self.defaultTheme_comboBox.setCurrentText(
+                            item["title"])
+                        break
+                    else:
+                        title = self.get_title_from_wms(item["url"])
+                        self.defaultTheme_comboBox.setCurrentText(title)
+                        break
 
     def save_themes_config(self):
         if not self.checks_before_saving():
@@ -279,21 +299,23 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
             if "defaultPrintResolutions" in config.keys():
                 config.pop("defaultPrintResolutions")
 
-        for item in config["themes"]["items"]:
-            if "default" in item.keys():
-                item.pop("default")
-                if "title" in item.keys():
-                    if self.defaultTheme_comboBox.currentText() == item["title"]:
-                        item["default"] = True
-                        continue
-                else:
-                    title = self.get_title_from_wms(item["url"])
-                    if self.defaultTheme_comboBox.currentText() == title:
-                        item["default"] = True
-                        continue
+        if "themes" in config.keys():
+            for item in config["themes"]["items"]:
+                if "default" in item.keys():
+                    item.pop("default")
+                    if "title" in item.keys():
+                        if self.defaultTheme_comboBox.currentText() == item[
+                                "title"]:
+                            item["default"] = True
+                            continue
+                    else:
+                        title = self.get_title_from_wms(item["url"])
+                        if self.defaultTheme_comboBox.currentText() == title:
+                            item["default"] = True
+                            continue
         try:
             themes_config = open(path, 'w')
-            themes_config.write(json.dumps(config))
+            themes_config.write(json.dumps(config, indent=2))
             themes_config.close()
         except PermissionError:
             QMessageBox.critical(
@@ -346,3 +368,18 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
         elif self.defaultPrintResolutions_lineEdit.styleSheet() == notok_style:
             return False
         return True
+
+    def create_or_edit_theme(self, method):
+        if method == "create":
+            if not QgsProject.instance().baseName():
+                QMessageBox.warning(None, "QWC2 Theme Manager",
+                                    "No open project found.")
+                return
+            settings_dlg = self.theme_settings_dialog = ThemeSettingsDialog(
+                self.iface.mainWindow(), method, self.iface)
+            if settings_dlg.exec_() == 1:
+                return
+            self.load_themes_config()
+        else:
+            theme_name = self.theme_settings_dialog = ThemeSettingsDialog(
+                self.iface.mainWindow(), method)

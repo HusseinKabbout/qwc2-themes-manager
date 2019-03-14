@@ -18,10 +18,17 @@
     <widget class="QLineEdit" name="url_lineEdit"/>
    </item>
    <item row="6" column="2">
-    <widget class="QgsProjectionSelectionWidget" name="projection_widget"/>
+    <widget class="QgsProjectionSelectionWidget" name="mapCrs_widget"/>
    </item>
    <item row="11" column="2">
-    <widget class="QLineEdit" name="searchProviders_lineEdit"/>
+    <widget class="QLineEdit" name="searchProviders_lineEdit">
+     <property name="text">
+      <string>coordinates</string>
+     </property>
+     <property name="placeholderText">
+      <string>Default provider: coordinates</string>
+     </property>
+    </widget>
    </item>
    <item row="2" column="0">
     <widget class="QLabel" name="label_2">
@@ -52,7 +59,11 @@
     </widget>
    </item>
    <item row="3" column="2">
-    <widget class="QLineEdit" name="mapscales_lineEdit"/>
+    <widget class="QLineEdit" name="scales_lineEdit">
+     <property name="placeholderText">
+      <string>Default scales are used, if left empty</string>
+     </property>
+    </widget>
    </item>
    <item row="17" column="2">
     <widget class="QDialogButtonBox" name="buttonBox">
@@ -60,12 +71,16 @@
       <enum>Qt::Horizontal</enum>
      </property>
      <property name="standardButtons">
-      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Save</set>
+      <set>QDialogButtonBox::Apply|QDialogButtonBox::Cancel</set>
      </property>
     </widget>
    </item>
    <item row="5" column="2">
-    <widget class="QLineEdit" name="printReselution_lineEdit"/>
+    <widget class="QLineEdit" name="printResolutions_lineEdit">
+     <property name="placeholderText">
+      <string>Default resolutions are used, if left empty</string>
+     </property>
+    </widget>
    </item>
    <item row="15" column="0">
     <widget class="QLabel" name="label_15">
@@ -80,7 +95,10 @@
       <enum>Qt::LeftToRight</enum>
      </property>
      <property name="text">
-      <string>False</string>
+      <string/>
+     </property>
+     <property name="tristate">
+      <bool>false</bool>
      </property>
     </widget>
    </item>
@@ -99,12 +117,16 @@
     </widget>
    </item>
    <item row="4" column="2">
-    <widget class="QLineEdit" name="printScales_lineEdit"/>
+    <widget class="QLineEdit" name="printScales_lineEdit">
+     <property name="placeholderText">
+      <string>Default print scales are used, if left empty</string>
+     </property>
+    </widget>
    </item>
    <item row="0" column="0">
     <widget class="QLabel" name="label_16">
      <property name="text">
-      <string>WMS Url</string>
+      <string>WMS Url (required)</string>
      </property>
     </widget>
    </item>
@@ -129,12 +151,43 @@
     </widget>
    </item>
    <item row="10" column="2">
-    <widget class="QComboBox" name="imageFormat_comboBox"/>
+    <widget class="QComboBox" name="format_comboBox">
+     <item>
+      <property name="text">
+       <string>image/png</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>image/jpeg</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>image/png; mode=16bit</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>image/png; mode=8bit</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>image/png; mode=1bit</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>application/dxf</string>
+      </property>
+     </item>
+    </widget>
    </item>
    <item row="8" column="0">
     <widget class="QLabel" name="label_8">
      <property name="text">
-      <string>Attribution</string>
+      <string>Attribution name</string>
      </property>
     </widget>
    </item>
@@ -174,30 +227,37 @@
     </widget>
    </item>
    <item row="13" column="2">
-    <widget class="QCheckBox" name="collapseLayerGrp_checkBox">
+    <widget class="QCheckBox" name="collapseLayerGroupsBelowLevel_checkBox">
      <property name="text">
-      <string>False</string>
+      <string/>
      </property>
     </widget>
    </item>
    <item row="14" column="2">
-    <widget class="QCheckBox" name="skipEmptyFeat_checkBox">
+    <widget class="QCheckBox" name="skipEmptyFeatureAttributes_checkBox">
      <property name="text">
-      <string>False</string>
+      <string/>
+     </property>
+     <property name="tristate">
+      <bool>false</bool>
      </property>
     </widget>
    </item>
    <item row="15" column="2">
-    <widget class="QCheckBox" name="allowReorderLayers_checkBox">
+    <widget class="QCheckBox" name="allowReorderingLayers_checkBox">
      <property name="text">
-      <string>False</string>
+      <string/>
      </property>
     </widget>
    </item>
    <item row="2" column="2">
     <layout class="QGridLayout" name="gridLayout_2">
      <item row="0" column="0">
-      <widget class="QLineEdit" name="thumbnail_lineEdit"/>
+      <widget class="QLineEdit" name="thumbnail_lineEdit">
+       <property name="placeholderText">
+        <string>Autogenerated via WMS GetMap, if left empty</string>
+       </property>
+      </widget>
      </item>
      <item row="0" column="1">
       <widget class="QToolButton" name="thumbnail_button">
@@ -209,10 +269,18 @@
     </layout>
    </item>
    <item row="1" column="2">
-    <widget class="QLineEdit" name="title_lineEdit"/>
+    <widget class="QLineEdit" name="title_lineEdit">
+     <property name="placeholderText">
+      <string>Project name will be use, if left empty</string>
+     </property>
+    </widget>
    </item>
    <item row="7" column="2">
-    <widget class="QLineEdit" name="extent_lineEdit"/>
+    <widget class="QLineEdit" name="extent_lineEdit">
+     <property name="placeholderText">
+      <string>xmin,ymin,xmax,ymax</string>
+     </property>
+    </widget>
    </item>
    <item row="16" column="0" colspan="3">
     <spacer name="verticalSpacer">

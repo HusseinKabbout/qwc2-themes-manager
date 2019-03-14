@@ -24,15 +24,13 @@ from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtCore import Qt
 from qgis.PyQt.QtWidgets import QAction
 from .resources import *
-from .theme_settings_dialog import ThemeSettingsDialog
+
 from .themes_manager_dockwidget import ThemeManagerDockWidget
 
 
 class ThemesManager:
     def __init__(self, iface):
         self.iface = iface
-        self.theme_settings_dialog = ThemeSettingsDialog(
-            self.iface.mainWindow())
 
     def initGui(self):
         icon_path = ":/plugins/qwc2-themes-manager/icon.png"
