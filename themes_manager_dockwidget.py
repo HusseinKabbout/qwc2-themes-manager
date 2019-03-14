@@ -291,10 +291,18 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
                     if self.defaultTheme_comboBox.currentText() == title:
                         item["default"] = True
                         continue
-
-        themes_config = open(path, 'w')
-        themes_config.write(json.dumps(config))
-        themes_config.close()
+        try:
+            themes_config = open(path, 'w')
+            themes_config.write(json.dumps(config))
+            themes_config.close()
+        except PermissionError:
+            QMessageBox.critical(
+                None, "QWC2 Theme Manager: Permission Error",
+                "Cannot create/override themes configuration file"
+                "\nInsufficient permissions!")
+            QgsMessageLog.logMessage(
+                "Permission Error: Cannot create/override file: %s." % path,
+                "QWC2 Theme Manager", Qgis.Critical)
 
     def get_title_from_wms(self, url):
         url = url + "?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetProjectSettings"
