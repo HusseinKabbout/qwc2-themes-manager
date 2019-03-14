@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/plugins/qwc2-themes-manager">
+        <file>icon.png</file>
+    </qresource>
+</RCC>

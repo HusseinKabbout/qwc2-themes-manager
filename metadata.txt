@@ -1,0 +1,21 @@
+[general]
+name=QWC2 Themes Manager
+qgisMinimumVersion=3.0
+description=This plugin helps users manage QWC2 Themes and deploys the edited themes configuration to the QWC2 installation directory.
+version=0.1
+author=Hussein Kabbout
+email=hussein.kabbout@sourcepole.ch
+
+about=Provide a brief description of the plugin and its purpose.
+
+tracker=https://github.com/HusseinKabbout/qwc2-themes-manager/issues
+repository=https://github.com/HusseinKabbout/qwc2-themes-manager
+
+tags=python
+
+homepage=http://homepage
+category=Plugins
+icon=icon.png
+experimental=False
+
+deprecated=False
