@@ -101,9 +101,11 @@ class ThemeSettingsDialog(QDialog, FORM_CLASS):
                                 "WMS url of the project is missing!")
             return
         new_theme = {}
+        if self.save_project() is not True:
+            return
         for child in self.children():
             child_name = child.objectName().split("_")[0]
-            if child_name == "extent" or child_name == "scales" or \
+            if child_name == "scales" or \
                     child_name == "printScales" or \
                     child_name == "printResolutions":
                 numbers = []
@@ -116,7 +118,6 @@ class ThemeSettingsDialog(QDialog, FORM_CLASS):
             elif isinstance(child, QCheckBox):
                 if child.isChecked():
                     new_theme[child_name] = True
-
         new_theme["url"] = self.url_lineEdit.text()
         new_theme["title"] = self.title_lineEdit.text() \
             if self.title_lineEdit.text() else QgsProject.instance().baseName()
@@ -134,6 +135,14 @@ class ThemeSettingsDialog(QDialog, FORM_CLASS):
             ",") if self.searchProviders_lineEdit.text() else ["coordinates"]
         new_theme["mapCrs"] = self.mapCrs_widget.crs().authid()
         new_theme["format"] = self.format_comboBox.currentText()
+
+        numbers = []
+        for num in self.extent_lineEdit.text().split(","):
+            if num:
+                numbers.append(int(num.strip()))
+        if numbers:
+            new_theme["extent"] = numbers[:4]
+
         if self.default_true == 0:
             new_theme["default"] = True
         path = os.path.join(self.settings.value(
@@ -163,21 +172,31 @@ class ThemeSettingsDialog(QDialog, FORM_CLASS):
     def check_inputs(self):
         lineEdits_to_check = [self.scales_lineEdit,
                               self.printScales_lineEdit,
-                              self.printResolutions_lineEdit,
-                              self.extent_lineEdit]
+                              self.printResolutions_lineEdit]
 
         for lineEdit in lineEdits_to_check:
             lineEdit.setStyleSheet("background: #FFFFFF; color: #000000;")
-            for number in lineEdit.text().split(","):
-                if not number.strip():
-                    continue
-                elif number.strip().isdigit():
-                    continue
-                else:
-                    lineEdit.setStyleSheet(
+            if lineEdit.text():
+                for number in lineEdit.text().split(","):
+                    if number.isdigit():
+                        continue
+                    else:
+                        lineEdit.setStyleSheet(
+                            "background: #FF7777; color: #FFFFFF;")
+                        break
+
+        self.extent_lineEdit.setStyleSheet(
+            "background: #FFFFFF; color: #000000;")
+        if self.extent_lineEdit.text():
+            for number in self.extent_lineEdit.text().split(","):
+                try:
+                    int(number)
+                except:
+                    self.extent_lineEdit.setStyleSheet(
                         "background: #FF7777; color: #FFFFFF;")
                     break
 
+        lineEdits_to_check.append(self.extent_lineEdit)
         for lineEdit in lineEdits_to_check:
             if lineEdit.styleSheet() == "background: #FF7777; color: #FFFFFF;":
                 msg = "Please check all marked fields.\nNote that all " \
@@ -187,7 +206,7 @@ class ThemeSettingsDialog(QDialog, FORM_CLASS):
 
                 QMessageBox.critical(None, "Invalid inputs", msg)
                 return False
-        if self.check_wms() is False:
+        if self.method == "edit" and self.check_wms() is False:
             self.url_lineEdit.setStyleSheet(
                 "background: #FF7777; color: #FFFFFF;")
             return False
@@ -214,7 +233,7 @@ class ThemeSettingsDialog(QDialog, FORM_CLASS):
                 "\nInsufficient permissions!")
             QgsMessageLog.logMessage(
                 "Permission Error: Couln't copy thumbnail picture "
-                "to the path: %s." % img_path,
+                "to the path: %s." % assets_path,
                 "QWC2 Theme Manager", Qgis.Critical)
             return False
         except FileNotFoundError:
@@ -257,6 +276,27 @@ class ThemeSettingsDialog(QDialog, FORM_CLASS):
             QgsMessageLog.logMessage(
                 "Invalid WMS URL: Couln't test WMS GetCapabilities "
                 "on the url: %s" % url,
+                "QWC2 Theme Manager", Qgis.Critical)
+            return False
+        return True
+
+    def save_project(self):
+        project_path = QgsProject.instance().absoluteFilePath()
+        project_dir_path = os.path.join(self.settings.value(
+            "qwc2-themes-manager/project_directory"),
+            os.path.basename(project_path))
+        if os.path.exists(project_dir_path):
+            return True
+        try:
+            copyfile(project_path, project_dir_path)
+        except PermissionError:
+            QMessageBox.critical(
+                None, "QWC2 Theme Manager: Permission Error",
+                "Couldn't save project in projects directory."
+                "\nInsufficient permissions!")
+            QgsMessageLog.logMessage(
+                "Permission Error: Couldn't copy project to"
+                " the path: %s." % project_dir_path,
                 "QWC2 Theme Manager", Qgis.Critical)
             return False
         return True

@@ -23,8 +23,6 @@
 
 import os
 import json
-from urllib.request import urlopen
-import xml.etree.ElementTree as ET
 from qgis.PyQt import uic
 from qgis.PyQt.QtWidgets import *
 from qgis.PyQt.QtCore import *
@@ -201,7 +199,7 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
                             item["title"])
                         break
                     else:
-                        title = self.get_title_from_wms(item["url"])
+                        title = os.path.basename(removed_theme["url"])
                         self.defaultTheme_comboBox.setCurrentText(title)
                         break
         self.old_config = config
@@ -240,7 +238,7 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
                 item.setData(Qt.UserRole, theme)
                 self.themes_listWidget.addItem(item)
             else:
-                title = self.get_title_from_wms(theme["url"])
+                title = os.path.basename(removed_theme["url"])
                 self.defaultTheme_comboBox.addItem(title)
                 item = QListWidgetItem(title)
                 theme["index"] = index
@@ -276,7 +274,7 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
                             item["title"])
                         break
                     else:
-                        title = self.get_title_from_wms(item["url"])
+                        title = os.path.basename(removed_theme["url"])
                         self.defaultTheme_comboBox.setCurrentText(title)
                         break
 
@@ -317,13 +315,14 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
             for item in config["themes"]["items"]:
                 if "default" in item.keys():
                     item.pop("default")
+                else:
                     if "title" in item.keys():
                         if self.defaultTheme_comboBox.currentText() == item[
                                 "title"]:
                             item["default"] = True
                             continue
                     else:
-                        title = self.get_title_from_wms(item["url"])
+                        title = os.path.basename(removed_theme["url"])
                         if self.defaultTheme_comboBox.currentText() == title:
                             item["default"] = True
                             continue
@@ -340,16 +339,6 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
                 "Permission Error: Cannot create/override file: %s." % path,
                 "QWC2 Theme Manager", Qgis.Critical)
 
-    def get_title_from_wms(self, url):
-        url = url + "?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetProjectSettings"
-        wms_xml = urlopen(url).read()
-        root = ET.fromstring(wms_xml)
-        for child in root:
-            if "Service" in child.tag:
-                for subchild in child.getchildren():
-                    if "Title" in subchild.tag:
-                        return subchild.text
-
     def reset_ui(self):
         self.defaultScales_lineEdit.setText(
             "1000000,500000,250000,100000,50000,"
@@ -365,9 +354,7 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
             lineEdit.setStyleSheet("background: #FFFFFF; color: #000000;")
             return
         for number in numbers_list.split(","):
-            if not number:
-                continue
-            elif number.isdigit():
+            if number.isdigit():
                 continue
             else:
                 lineEdit.setStyleSheet("background: #FF7777; color: #FFFFFF;")
@@ -389,6 +376,12 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
             if not QgsProject.instance().baseName():
                 QMessageBox.warning(None, "QWC2 Theme Manager",
                                     "No open project found.")
+                return
+            elif QgsProject.instance().baseName() + ".qgs" in \
+                    os.listdir(self.settings.value(
+                        "qwc2-themes-manager/project_directory")):
+                QMessageBox.warning(None, "QWC2 Theme Manager",
+                                    "Opened project is already published.")
                 return
             settings_dlg = self.theme_settings_dialog = ThemeSettingsDialog(
                 self.iface.mainWindow(), method, self.iface,
@@ -432,7 +425,7 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
         try:
             themes_config = open(path, "r", encoding="utf-8")
             config = json.load(themes_config)
-            config["themes"]["items"].pop(index)
+            removed_theme = config["themes"]["items"].pop(index)
             themes_config.close()
             themes_config = open(path, "w", encoding="utf-8")
             themes_config.write(json.dumps(config, indent=2))
@@ -448,3 +441,30 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
             return
 
         self.load_themes_config()
+
+        res = QMessageBox.question(
+            None, "QWC2 Theme Manager",
+            "Do you also want to delete the QGIS project of "
+            "the deleted Theme?")
+        if res == QMessageBox.No:
+            return
+
+        try:
+            path = os.path.join(self.settings.value(
+                "qwc2-themes-manager/project_directory"),
+                os.path.basename(removed_theme["url"]))
+            os.remove(path + ".qgs")
+        except PermissionError:
+            QMessageBox.critical(
+                None, "QWC2 Theme Manager: Permission Error",
+                "Cannot delete the project"
+                "\nInsufficient permissions!")
+            QgsMessageLog.logMessage(
+                "Permission Error: Cannot Delete the project with "
+                "the path: %s." % path,
+                "QWC2 Theme Manager", Qgis.Critical)
+            return
+        except FileNotFoundError:
+            QgsMessageLog.logMessage(
+                "Delete project: The path: %s doesn't exist." % path,
+                "QWC2 Theme Manager", Qgis.Warning)
