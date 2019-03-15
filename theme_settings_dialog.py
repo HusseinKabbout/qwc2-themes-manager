@@ -22,6 +22,8 @@
 """
 import json
 import os
+from urllib.error import HTTPError, URLError
+from urllib.request import urlopen
 from shutil import copyfile
 from qgis.core import *
 from qgis.PyQt import *
@@ -77,18 +79,27 @@ class ThemeSettingsDialog(QDialog, FORM_CLASS):
                 if numbers:
                     new_theme[child_name] = numbers
                 continue
-            elif isinstance(child, QLineEdit):
-                if child.text():
-                    if child_name == "thumbnail":
-                        if not self.copy_thumbnail(child.text()):
-                            return
-                        new_theme[child_name] = os.path.basename(child.text())
-                        continue
-                    new_theme[child_name] = child.text()
             elif isinstance(child, QCheckBox):
-                new_theme[child_name] = child.isChecked()
+                if child.isChecked():
+                    new_theme[child_name] = True
+
+        new_theme["url"] = self.url_lineEdit.text()
+        new_theme["title"] = self.title_lineEdit.text() \
+            if self.title_lineEdit.text() else QgsProject.instance().baseName()
+        if self.thumbnail_lineEdit.text() and self.copy_thumbnail(
+                self.thumbnail_lineEdit.text()):
+            new_theme["thumbnail"] = os.path.basename(
+                self.thumbnail_lineEdit.text())
+        else:
+            return
+        if self.attribution_lineEdit.text():
+            new_theme["attribution"] = self.attribution_lineEdit.text()
+            new_theme["attributionUrl"] = self.attributionUrl_lineEdit.text()
+        new_theme["searchProviders"] = self.searchProviders_lineEdit.text().split(
+            ",") if self.searchProviders_lineEdit.text() else ["coordinates"]
         new_theme["mapCrs"] = self.mapCrs_widget.crs().authid()
         new_theme["format"] = self.format_comboBox.currentText()
+
         if self.default_true == 0:
             new_theme["default"] = True
         path = os.path.join(self.settings.value(
@@ -139,6 +150,10 @@ class ThemeSettingsDialog(QDialog, FORM_CLASS):
 
                 QMessageBox.critical(None, "Invalid inputs", msg)
                 return False
+        if not self.check_wms():
+            self.url_lineEdit.setStyleSheet(
+                "background: #FF7777; color: #FFFFFF;")
+            return False
         return True
 
     def open_thumbnail_fileBrowser(self):
@@ -172,4 +187,38 @@ class ThemeSettingsDialog(QDialog, FORM_CLASS):
                 "does not exist." % img_path,
                 "QWC2 Theme Manager", Qgis.Critical)
             return False
+        return True
+
+    def check_wms(self):
+        if not self.url_lineEdit.text():
+            return True
+        url = self.url_lineEdit.text() + \
+            "?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetCapabilities"
+        try:
+            urlopen(url).read()
+        except ValueError:
+            QMessageBox.critical(None, "Invalid URL",
+                                 "The given wms URL is not valid.")
+            QgsMessageLog.logMessage(
+                "Invalid WMS URL: Couln't test WMS GetCapabilities "
+                "on the url: %s" % url,
+                "QWC2 Theme Manager", Qgis.Critical)
+            return False
+        except HTTPError:
+            QMessageBox.critical(None, "Invalid URL",
+                                 "The given wms URL is not valid.")
+            QgsMessageLog.logMessage(
+                "Invalid WMS URL: Couln't test WMS GetCapabilities "
+                "on the url: %s" % url,
+                "QWC2 Theme Manager", Qgis.Critical)
+            return False
+        except URLError:
+            QMessageBox.critical(None, "Invalid URL",
+                                 "The given wms URL is not valid.")
+            QgsMessageLog.logMessage(
+                "Invalid WMS URL: Couln't test WMS GetCapabilities "
+                "on the url: %s" % url,
+                "QWC2 Theme Manager", Qgis.Critical)
+            return False
+        self.url_lineEdit.setStyleSheet("background: #FFFFFF; color: #000000;")
         return True
