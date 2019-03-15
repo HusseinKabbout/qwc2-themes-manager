@@ -50,8 +50,10 @@ class ThemeSettingsDialog(QDialog, FORM_CLASS):
         self.index = None
         if self.theme:
             self.index = self.theme.pop("index")
-
-        self.buttonBox.button(QDialogButtonBox.Apply).setText("Create")
+        if method == "create":
+            self.buttonBox.button(QDialogButtonBox.Apply).setText("Create")
+        else:
+            self.buttonBox.button(QDialogButtonBox.Apply).setText("Save")
         self.buttonBox.button(QDialogButtonBox.Apply).clicked.connect(
             self.save_theme)
         self.thumbnail_button.clicked.connect(self.open_thumbnail_fileBrowser)
@@ -70,7 +72,10 @@ class ThemeSettingsDialog(QDialog, FORM_CLASS):
                 child_name = child.objectName().split("_")[0]
                 if child_name not in self.theme.keys():
                     continue
-                if child_name == "extent" or child_name == "scales" or child_name == "printScales" or child_name == "printResolutions" or child_name == "searchProviders":
+                if child_name == "extent" or child_name == "scales" or \
+                        child_name == "printScales" or \
+                        child_name == "printResolutions" or \
+                        child_name == "searchProviders":
                     child.setText(",".join(
                         str(item) for item in self.theme[child_name]))
                     continue
@@ -98,7 +103,9 @@ class ThemeSettingsDialog(QDialog, FORM_CLASS):
         new_theme = {}
         for child in self.children():
             child_name = child.objectName().split("_")[0]
-            if child_name == "extent" or child_name == "scales" or child_name == "printScales" or child_name == "printResolutions":
+            if child_name == "extent" or child_name == "scales" or \
+                    child_name == "printScales" or \
+                    child_name == "printResolutions":
                 numbers = []
                 for num in child.text().split(","):
                     if num:
@@ -117,10 +124,13 @@ class ThemeSettingsDialog(QDialog, FORM_CLASS):
                 self.thumbnail_lineEdit.text()):
             new_theme["thumbnail"] = os.path.basename(
                 self.thumbnail_lineEdit.text())
+        elif self.thumbnail_lineEdit.text():
+            return
         if self.attribution_lineEdit.text():
             new_theme["attribution"] = self.attribution_lineEdit.text()
             new_theme["attributionUrl"] = self.attributionUrl_lineEdit.text()
-        new_theme["searchProviders"] = self.searchProviders_lineEdit.text().split(
+        new_theme[
+            "searchProviders"] = self.searchProviders_lineEdit.text().split(
             ",") if self.searchProviders_lineEdit.text() else ["coordinates"]
         new_theme["mapCrs"] = self.mapCrs_widget.crs().authid()
         new_theme["format"] = self.format_comboBox.currentText()
@@ -131,9 +141,10 @@ class ThemeSettingsDialog(QDialog, FORM_CLASS):
         try:
             themes_config = open(path, "r", encoding="utf-8")
             config = json.load(themes_config)
-            if "themes" not in config.keys() or "items" not in config["themes"].keys():
+            if "themes" not in config.keys() or "items" not in config[
+                    "themes"].keys():
                 config["themes"] = {"items": []}
-            if self.index:
+            if self.index is not None:
                 config["themes"]["items"].pop(self.index)
             config["themes"]["items"].append(new_theme)
             themes_config.close()
@@ -169,10 +180,10 @@ class ThemeSettingsDialog(QDialog, FORM_CLASS):
 
         for lineEdit in lineEdits_to_check:
             if lineEdit.styleSheet() == "background: #FF7777; color: #FFFFFF;":
-                msg = "Please check all marked fields.\nNote that all" \
+                msg = "Please check all marked fields.\nNote that all " \
                     "numbers must be whole numbers and if there are multiple" \
-                    "numbers in one field, then the numbers must" \
-                    " be seperated by single comma."
+                    " numbers in one field, then the numbers must" \
+                    " be seperated by a single comma."
 
                 QMessageBox.critical(None, "Invalid inputs", msg)
                 return False
@@ -192,6 +203,8 @@ class ThemeSettingsDialog(QDialog, FORM_CLASS):
         assets_path = os.path.join(self.settings.value(
             "qwc2-themes-manager/qwc2_directory"),
             "assets/img/mapthumbs/" + os.path.basename(img_path))
+        if os.path.exists(assets_path):
+            return True
         try:
             copyfile(img_path, assets_path)
         except PermissionError:

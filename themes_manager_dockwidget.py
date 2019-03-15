@@ -72,6 +72,7 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
             lambda: self.create_or_edit_theme("create"))
         self.editTheme_button.clicked.connect(
             lambda: self.create_or_edit_theme("edit"))
+        self.deleteTheme_button.clicked.connect(self.delete_theme)
 
         self.set_qwc2_dir_path(self.settings.value(
             "qwc2-themes-manager/qwc2_directory"))
@@ -147,7 +148,7 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
 
         try:
             config = json.load(themes_config)
-        except:
+        except Exception:
             QgsMessageLog.logMessage(
                 "Corrupt JSON file: The JSON module couldn't read the "
                 "themesConfig.json file.",
@@ -291,20 +292,23 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
         themes_config.close()
         if self.defaultScales_lineEdit.text():
             config["defaultScales"] = [
-                int(num.strip()) for num in self.defaultScales_lineEdit.text().split(",")]
+                int(num.strip()) for num in
+                self.defaultScales_lineEdit.text().split(",")]
         else:
             config["defaultScales"] = [1000000, 500000, 250000, 100000,
                                        50000, 25000, 10000, 5000, 2500, 1000,
                                        500]
         if self.defaultPrintScales_lineEdit.text():
             config["defaultPrintScales"] = [
-                int(num.strip()) for num in self.defaultPrintScales_lineEdit.text().split(",")]
+                int(num.strip()) for num in
+                self.defaultPrintScales_lineEdit.text().split(",")]
         else:
             if "defaultPrintScales" in config.keys():
                 config.pop("defaultPrintScales")
         if self.defaultPrintResolutions_lineEdit.text():
             config["defaultPrintResolutions"] = [
-                int(num.strip()) for num in self.defaultPrintResolutions_lineEdit.text().split(",")]
+                int(num.strip()) for num in
+                self.defaultPrintResolutions_lineEdit.text().split(",")]
         else:
             if "defaultPrintResolutions" in config.keys():
                 config.pop("defaultPrintResolutions")
@@ -348,7 +352,8 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
 
     def reset_ui(self):
         self.defaultScales_lineEdit.setText(
-            "1000000,500000,250000,100000,50000,25000,10000,5000,2500,1000,500")
+            "1000000,500000,250000,100000,50000,"
+            "25000,10000,5000,2500,1000,500")
         self.defaultPrintScales_lineEdit.setText("")
         self.defaultPrintResolutions_lineEdit.setText("")
         self.defaultTheme_comboBox.clear()
@@ -405,3 +410,41 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
                 return
             self.load_themes_config()
             self.save_themes_config()
+
+    def delete_theme(self):
+        theme = self.themes_listWidget.selectedItems()
+        if not theme:
+            QMessageBox.warning(None, "QWC2 Theme Manager",
+                                "No theme selected.")
+            return
+
+        res = QMessageBox.question(
+            None, "QWC2 Theme Manager",
+            "Do you really want to delete the selected theme?")
+        if res == QMessageBox.No:
+            return
+
+        path = os.path.join(self.settings.value(
+            "qwc2-themes-manager/qwc2_directory"), "themesConfig.json")
+        theme = theme[0].data(Qt.UserRole)
+        index = theme.pop("index")
+
+        try:
+            themes_config = open(path, "r", encoding="utf-8")
+            config = json.load(themes_config)
+            config["themes"]["items"].pop(index)
+            themes_config.close()
+            themes_config = open(path, "w", encoding="utf-8")
+            themes_config.write(json.dumps(config, indent=2))
+            themes_config.close()
+        except PermissionError:
+            QMessageBox.critical(
+                None, "QWC2 Theme Manager: Permission Error",
+                "Cannot delete the selected theme"
+                "\nInsufficient permissions!")
+            QgsMessageLog.logMessage(
+                "Permission Error: Cannot open/override file: %s." % path,
+                "QWC2 Theme Manager", Qgis.Critical)
+            return
+
+        self.load_themes_config()
