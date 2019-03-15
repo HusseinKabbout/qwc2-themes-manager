@@ -377,12 +377,16 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
                 QMessageBox.warning(None, "QWC2 Theme Manager",
                                     "No open project found.")
                 return
-            elif QgsProject.instance().baseName() + ".qgs" in \
-                    os.listdir(self.settings.value(
-                        "qwc2-themes-manager/project_directory")):
-                QMessageBox.warning(None, "QWC2 Theme Manager",
-                                    "Opened project is already published.")
-                return
+                
+            for index in range(self.themes_listWidget.count()):
+                if os.path.basename(
+                        self.themes_listWidget.item(
+                            index).data(Qt.UserRole)[
+                                "url"]) == QgsProject.instance().baseName():
+
+                    QMessageBox.warning(None, "QWC2 Theme Manager",
+                                        "Opened project is already published.")
+                    return
             settings_dlg = self.theme_settings_dialog = ThemeSettingsDialog(
                 self.iface.mainWindow(), method, self.iface,
                 self.defaultTheme_comboBox.count())

@@ -94,6 +94,8 @@ class ThemeSettingsDialog(QDialog, FORM_CLASS):
                     continue
 
     def save_theme(self):
+        if self.save_project() is not True:
+            return
         if not self.check_inputs():
             return
         if not self.url_lineEdit.text():
@@ -101,8 +103,6 @@ class ThemeSettingsDialog(QDialog, FORM_CLASS):
                                 "WMS url of the project is missing!")
             return
         new_theme = {}
-        if self.save_project() is not True:
-            return
         for child in self.children():
             child_name = child.objectName().split("_")[0]
             if child_name == "scales" or \
@@ -206,7 +206,7 @@ class ThemeSettingsDialog(QDialog, FORM_CLASS):
 
                 QMessageBox.critical(None, "Invalid inputs", msg)
                 return False
-        if self.method == "edit" and self.check_wms() is False:
+        if self.check_wms() is False:
             self.url_lineEdit.setStyleSheet(
                 "background: #FF7777; color: #FFFFFF;")
             return False
