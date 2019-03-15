@@ -90,8 +90,6 @@ class ThemeSettingsDialog(QDialog, FORM_CLASS):
                 self.thumbnail_lineEdit.text()):
             new_theme["thumbnail"] = os.path.basename(
                 self.thumbnail_lineEdit.text())
-        else:
-            return
         if self.attribution_lineEdit.text():
             new_theme["attribution"] = self.attribution_lineEdit.text()
             new_theme["attributionUrl"] = self.attributionUrl_lineEdit.text()
@@ -99,7 +97,7 @@ class ThemeSettingsDialog(QDialog, FORM_CLASS):
             ",") if self.searchProviders_lineEdit.text() else ["coordinates"]
         new_theme["mapCrs"] = self.mapCrs_widget.crs().authid()
         new_theme["format"] = self.format_comboBox.currentText()
-
+        print(1)
         if self.default_true == 0:
             new_theme["default"] = True
         path = os.path.join(self.settings.value(
@@ -121,6 +119,7 @@ class ThemeSettingsDialog(QDialog, FORM_CLASS):
             QgsMessageLog.logMessage(
                 "Permission Error: Cannot create/override file: %s." % path,
                 "QWC2 Theme Manager", Qgis.Critical)
+        print(2)
         self.close()
 
     def check_inputs(self):
@@ -150,7 +149,7 @@ class ThemeSettingsDialog(QDialog, FORM_CLASS):
 
                 QMessageBox.critical(None, "Invalid inputs", msg)
                 return False
-        if not self.check_wms():
+        if self.check_wms() is False:
             self.url_lineEdit.setStyleSheet(
                 "background: #FF7777; color: #FFFFFF;")
             return False
@@ -220,5 +219,4 @@ class ThemeSettingsDialog(QDialog, FORM_CLASS):
                 "on the url: %s" % url,
                 "QWC2 Theme Manager", Qgis.Critical)
             return False
-        self.url_lineEdit.setStyleSheet("background: #FFFFFF; color: #000000;")
         return True

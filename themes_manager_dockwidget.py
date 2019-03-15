@@ -189,7 +189,7 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
                 ",".join(str(num) for num in config[
                     "defaultPrintResolutions"]))
 
-        if "themes" in config.keys():
+        if "themes" in config.keys() and "items" in config["themes"].keys():
             self.fill_listView(config["themes"]["items"])
             for item in config["themes"]["items"]:
                 if "default" in item.keys():
@@ -233,11 +233,13 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
             if "title" in theme.keys():
                 self.defaultTheme_comboBox.addItem(theme["title"])
                 item = QListWidgetItem(theme["title"])
+                item.setData(Qt.UserRole, theme["url"])
                 self.themes_listWidget.addItem(item)
             else:
                 title = self.get_title_from_wms(theme["url"])
                 self.defaultTheme_comboBox.addItem(title)
                 item = QListWidgetItem(title)
+                item.setData(Qt.UserRole, theme["url"])
                 self.themes_listWidget.addItem(item)
 
     def reset_themes_config(self):
@@ -259,7 +261,8 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
                         "defaultPrintResolutions"]))
 
         self.defaultTheme_comboBox.clear()
-        if "themes" in self.old_config.keys():
+        if "themes" in self.old_config.keys() and "items" in self.old_config[
+                "themes"].keys():
             self.fill_listView(self.old_config["themes"]["items"])
             for item in self.old_config["themes"]["items"]:
                 if "default" in item.keys():
@@ -301,8 +304,8 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
         else:
             if "defaultPrintResolutions" in config.keys():
                 config.pop("defaultPrintResolutions")
-
-        if "themes" in config.keys():
+        if "themes" in config.keys() and "items" in config[
+                "themes"].keys():
             for item in config["themes"]["items"]:
                 if "default" in item.keys():
                     item.pop("default")
