@@ -63,13 +63,15 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
         self.buttonBox.button(QDialogButtonBox.Reset).clicked.connect(
             self.reset_themes_config)
         self.defaultScales_lineEdit.textChanged.connect(
-            lambda: self.check_list(self.defaultScales_lineEdit))
+            lambda: self.check_numbers(self.defaultScales_lineEdit))
         self.defaultPrintScales_lineEdit.textChanged.connect(
-            lambda: self.check_list(self.defaultPrintScales_lineEdit))
+            lambda: self.check_numbers(self.defaultPrintScales_lineEdit))
         self.defaultPrintResolutions_lineEdit.textChanged.connect(
-            lambda: self.check_list(self.defaultPrintResolutions_lineEdit))
+            lambda: self.check_numbers(self.defaultPrintResolutions_lineEdit))
         self.addTheme_button.clicked.connect(
             lambda: self.create_or_edit_theme("create"))
+        self.editTheme_button.clicked.connect(
+            lambda: self.create_or_edit_theme("edit"))
 
         self.set_qwc2_dir_path(self.settings.value(
             "qwc2-themes-manager/qwc2_directory"))
@@ -229,17 +231,19 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
         return open(path, 'r')
 
     def fill_listView(self, themes):
-        for theme in themes:
+        for index, theme in enumerate(themes):
             if "title" in theme.keys():
                 self.defaultTheme_comboBox.addItem(theme["title"])
                 item = QListWidgetItem(theme["title"])
-                item.setData(Qt.UserRole, theme["url"])
+                theme["index"] = index
+                item.setData(Qt.UserRole, theme)
                 self.themes_listWidget.addItem(item)
             else:
                 title = self.get_title_from_wms(theme["url"])
                 self.defaultTheme_comboBox.addItem(title)
                 item = QListWidgetItem(title)
-                item.setData(Qt.UserRole, theme["url"])
+                theme["index"] = index
+                item.setData(Qt.UserRole, theme)
                 self.themes_listWidget.addItem(item)
 
     def reset_themes_config(self):
@@ -350,7 +354,7 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
         self.defaultTheme_comboBox.clear()
         self.themes_listWidget.clear()
 
-    def check_list(self, lineEdit):
+    def check_numbers(self, lineEdit):
         numbers_list = lineEdit.text()
         if not numbers_list:
             lineEdit.setStyleSheet("background: #FFFFFF; color: #000000;")
@@ -389,5 +393,15 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
             self.load_themes_config()
             self.save_themes_config()
         else:
-            theme_name = self.theme_settings_dialog = ThemeSettingsDialog(
-                self.iface.mainWindow(), method)
+            theme = self.themes_listWidget.selectedItems()
+            if not theme:
+                QMessageBox.warning(None, "QWC2 Theme Manager",
+                                    "No theme selected.")
+                return
+            settings_dlg = self.theme_settings_dialog = ThemeSettingsDialog(
+                self.iface.mainWindow(), method, self.iface,
+                self.defaultTheme_comboBox.count(), theme[0].data(Qt.UserRole))
+            if settings_dlg.exec_() == 1:
+                return
+            self.load_themes_config()
+            self.save_themes_config()

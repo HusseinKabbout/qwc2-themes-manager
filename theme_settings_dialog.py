@@ -26,6 +26,7 @@ from urllib.error import HTTPError, URLError
 from urllib.request import urlopen
 from shutil import copyfile
 from qgis.core import *
+from qgis.gui import *
 from qgis.PyQt import *
 from qgis.PyQt.QtWidgets import *
 from qgis.PyQt.QtCore import *
@@ -37,7 +38,7 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(
 
 class ThemeSettingsDialog(QDialog, FORM_CLASS):
 
-    def __init__(self, parent, method, iface, default_true):
+    def __init__(self, parent, method, iface, default_true, theme=None):
         super(ThemeSettingsDialog, self).__init__(parent)
         self.setupUi(self)
 
@@ -45,6 +46,10 @@ class ThemeSettingsDialog(QDialog, FORM_CLASS):
         self.iface = iface
         self.default_true = default_true
         self.settings = QSettings()
+        self.theme = theme
+        self.index = None
+        if self.theme:
+            self.index = self.theme.pop("index")
 
         self.buttonBox.button(QDialogButtonBox.Apply).setText("Create")
         self.buttonBox.button(QDialogButtonBox.Apply).clicked.connect(
@@ -60,6 +65,28 @@ class ThemeSettingsDialog(QDialog, FORM_CLASS):
             self.extent_lineEdit.setText(
                 self.iface.mapCanvas().extent().toString(0).replace(
                     " : ", ","))
+        else:
+            for child in self.children():
+                child_name = child.objectName().split("_")[0]
+                if child_name not in self.theme.keys():
+                    continue
+                if child_name == "extent" or child_name == "scales" or child_name == "printScales" or child_name == "printResolutions" or child_name == "searchProviders":
+                    child.setText(",".join(
+                        str(item) for item in self.theme[child_name]))
+                    continue
+                elif isinstance(child, QLineEdit):
+                    child.setText(self.theme[child_name])
+                    continue
+                elif isinstance(child, QCheckBox):
+                    child.setChecked(self.theme[child_name])
+                    continue
+                elif isinstance(child, QgsProjectionSelectionWidget):
+                    child.setCrs(QgsCoordinateReferenceSystem(
+                        self.theme[child_name]))
+                    continue
+                elif isinstance(child, QComboBox):
+                    child.setCurrentText(self.theme[child_name])
+                    continue
 
     def save_theme(self):
         if not self.check_inputs():
@@ -97,7 +124,6 @@ class ThemeSettingsDialog(QDialog, FORM_CLASS):
             ",") if self.searchProviders_lineEdit.text() else ["coordinates"]
         new_theme["mapCrs"] = self.mapCrs_widget.crs().authid()
         new_theme["format"] = self.format_comboBox.currentText()
-        print(1)
         if self.default_true == 0:
             new_theme["default"] = True
         path = os.path.join(self.settings.value(
@@ -107,6 +133,8 @@ class ThemeSettingsDialog(QDialog, FORM_CLASS):
             config = json.load(themes_config)
             if "themes" not in config.keys() or "items" not in config["themes"].keys():
                 config["themes"] = {"items": []}
+            if self.index:
+                config["themes"]["items"].pop(self.index)
             config["themes"]["items"].append(new_theme)
             themes_config.close()
             themes_config = open(path, "w", encoding="utf-8")
@@ -119,7 +147,6 @@ class ThemeSettingsDialog(QDialog, FORM_CLASS):
             QgsMessageLog.logMessage(
                 "Permission Error: Cannot create/override file: %s." % path,
                 "QWC2 Theme Manager", Qgis.Critical)
-        print(2)
         self.close()
 
     def check_inputs(self):
