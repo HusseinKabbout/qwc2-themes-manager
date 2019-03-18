@@ -23,6 +23,7 @@
 
 import os
 import json
+import subprocess
 from qgis.PyQt import uic
 from qgis.PyQt.QtWidgets import *
 from qgis.PyQt.QtCore import *
@@ -491,5 +492,22 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
             self.showQWC2_button.setEnabled(False)
 
     def gen_complete_config(self):
-        pass
-        # os.chdir(self.qwc2Dir_lineEdit.text())
+        if self.themes_listWidget.count() == 0:
+            return
+        os.chdir(self.qwc2Dir_lineEdit.text())
+        script_path = os.path.join(os.path.dirname(__file__),
+                                   "themesConfig.py")
+        output = subprocess.Popen(['python3', script_path],
+                                  stdout=subprocess.PIPE,
+                                  stderr=subprocess.PIPE)
+
+        stdout, stderr = output.communicate()
+        if stderr.decode("utf-8"):
+            QMessageBox.warning(
+                None, "QWC2 Theme Manager",
+                "Couldn't generate themes.json\n"
+                "Please run the script: themesConfig.py manually to generate"
+                "the themes.json file.")
+            QgsMessageLog.logMessage(
+                "Python execution error: \n%s" % stderr.decode("utf-8"),
+                "QWC2 Theme Manager", Qgis.Critical)
