@@ -340,7 +340,7 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
                         continue
         try:
             themes_config = open(path, 'w')
-            themes_config.write(json.dumps(config, indent=2))
+            themes_config.write(json.dumps(config, indent=2, sort_keys=True))
             themes_config.close()
         except PermissionError:
             QMessageBox.critical(
@@ -434,7 +434,7 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
             removed_theme = config["themes"]["items"].pop(index)
             themes_config.close()
             themes_config = open(path, "w", encoding="utf-8")
-            themes_config.write(json.dumps(config, indent=2))
+            themes_config.write(json.dumps(config, indent=2, sort_keys=True))
             themes_config.close()
         except PermissionError:
             QMessageBox.critical(

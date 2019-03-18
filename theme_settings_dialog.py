@@ -161,7 +161,7 @@ class ThemeSettingsDialog(QDialog, FORM_CLASS):
             config["themes"]["items"].append(new_theme)
             themes_config.close()
             themes_config = open(path, "w", encoding="utf-8")
-            themes_config.write(json.dumps(config, indent=2))
+            themes_config.write(json.dumps(config, indent=2, sort_keys=True))
         except PermissionError:
             QMessageBox.critical(
                 None, "QWC2 Theme Manager: Permission Error",
