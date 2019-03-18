@@ -88,7 +88,7 @@
            <item row="3" column="1">
             <widget class="QPushButton" name="openProject_button">
              <property name="enabled">
-              <bool>true</bool>
+              <bool>false</bool>
              </property>
              <property name="toolTip">
               <string>Open the themes project in QGIS.</string>
@@ -101,7 +101,7 @@
            <item row="2" column="1">
             <widget class="QPushButton" name="deleteTheme_button">
              <property name="enabled">
-              <bool>true</bool>
+              <bool>false</bool>
              </property>
              <property name="toolTip">
               <string>Remove the selected theme.</string>
@@ -127,7 +127,7 @@
            <item row="1" column="1">
             <widget class="QPushButton" name="editTheme_button">
              <property name="enabled">
-              <bool>true</bool>
+              <bool>false</bool>
              </property>
              <property name="toolTip">
               <string>Edit the selected theme properties.</string>

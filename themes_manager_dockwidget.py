@@ -48,6 +48,7 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
         self.buttonBox.button(QDialogButtonBox.Retry).setText("Refresh")
 
         QgsProject.instance().readProject.connect(self.enable_publish)
+        self.themes_listWidget.itemClicked.connect(self.enable_buttons)
         self.qwc2Dir_button.clicked.connect(
             lambda: self.open_file_browser(self.qwc2Dir_lineEdit))
         self.qwc2Dir_lineEdit.textChanged.connect(
@@ -237,6 +238,9 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
         return open(path, 'r')
 
     def fill_listView(self, themes):
+        self.editTheme_button.setEnabled(False)
+        self.deleteTheme_button.setEnabled(False)
+        self.openProject_button.setEnabled(False)
         for index, theme in enumerate(themes):
             if "title" in theme.keys():
                 self.defaultTheme_comboBox.addItem(theme["title"])
@@ -511,3 +515,8 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
             QgsMessageLog.logMessage(
                 "Python execution error: \n%s" % stderr.decode("utf-8"),
                 "QWC2 Theme Manager", Qgis.Critical)
+
+    def enable_buttons(self):
+        self.editTheme_button.setEnabled(True)
+        self.deleteTheme_button.setEnabled(True)
+        self.openProject_button.setEnabled(True)
