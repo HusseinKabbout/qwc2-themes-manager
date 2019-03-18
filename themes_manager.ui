@@ -36,7 +36,7 @@
         <item row="0" column="0">
          <widget class="QTabWidget" name="tabWidget">
           <property name="currentIndex">
-           <number>0</number>
+           <number>1</number>
           </property>
           <widget class="QWidget" name="themes_tab">
            <attribute name="title">
@@ -244,7 +244,11 @@
              </widget>
             </item>
             <item row="5" column="0">
-             <widget class="QLineEdit" name="QWC2Url_lineEdit"/>
+             <widget class="QLineEdit" name="QWC2Url_lineEdit">
+              <property name="text">
+               <string>http://</string>
+              </property>
+             </widget>
             </item>
            </layout>
           </widget>

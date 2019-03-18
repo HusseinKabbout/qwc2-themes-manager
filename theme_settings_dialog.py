@@ -118,7 +118,10 @@ class ThemeSettingsDialog(QDialog, FORM_CLASS):
             elif isinstance(child, QCheckBox):
                 if child.isChecked():
                     new_theme[child_name] = True
-        new_theme["url"] = self.url_lineEdit.text()
+        wms_url = self.url_lineEdit.text()
+        if not wms_url.startswith("http"):
+            wms_url = "http://" + wms_url
+        new_theme["url"] = wms_url
         new_theme["title"] = self.title_lineEdit.text() \
             if self.title_lineEdit.text() else os.path.basename(
                 self.url_lineEdit.text())
@@ -267,9 +270,10 @@ class ThemeSettingsDialog(QDialog, FORM_CLASS):
         return True
 
     def check_wms(self):
-        if not self.url_lineEdit.text():
-            return True
-        url = self.url_lineEdit.text() + \
+        wms_url = self.url_lineEdit.text()
+        if not wms_url.startswith("http"):
+            wms_url = "http://" + wms_url
+        url = wms_url + \
             "?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetCapabilities"
         try:
             urlopen(url).read()

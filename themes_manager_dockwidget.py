@@ -24,6 +24,7 @@
 import os
 import json
 import subprocess
+import webbrowser
 from qgis.PyQt import uic
 from qgis.PyQt.QtWidgets import *
 from qgis.PyQt.QtCore import *
@@ -78,6 +79,7 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
             lambda: self.create_or_edit_theme("edit"))
         self.deleteTheme_button.clicked.connect(self.delete_theme)
         self.openProject_button.clicked.connect(self.open_project)
+        self.showQWC2_button.clicked.connect(self.open_qwc2)
 
         self.set_qwc2_dir_path(self.settings.value(
             "qwc2-themes-manager/qwc2_directory"))
@@ -100,7 +102,6 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
         if os.path.isdir(self.qwc2Dir_lineEdit.text()) and os.path.isdir(
                 self.projectsDir_lineEdit.text()):
             self.tabWidget.setTabEnabled(0, True)
-            self.enable_qwc2_button()
         else:
             self.tabWidget.setTabEnabled(0, False)
 
@@ -242,6 +243,7 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
         self.editTheme_button.setEnabled(False)
         self.deleteTheme_button.setEnabled(False)
         self.openProject_button.setEnabled(False)
+        self.showQWC2_button.setEnabled(False)
         for index, theme in enumerate(themes):
             if "title" in theme.keys():
                 self.defaultTheme_comboBox.addItem(theme["title"])
@@ -489,12 +491,6 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
                         "url"]) == QgsProject.instance().baseName():
                 self.addTheme_button.setEnabled(False)
 
-    def enable_qwc2_button(self):
-        if self.QWC2Url_lineEdit.text():
-            self.showQWC2_button.setEnabled(True)
-        else:
-            self.showQWC2_button.setEnabled(False)
-
     def gen_complete_config(self):
         if self.themes_listWidget.count() == 0:
             return
@@ -520,6 +516,14 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
         self.editTheme_button.setEnabled(True)
         self.deleteTheme_button.setEnabled(True)
         self.openProject_button.setEnabled(True)
+        self.enable_qwc2_button()
+
+    def enable_qwc2_button(self):
+        if self.QWC2Url_lineEdit.text() and \
+                self.themes_listWidget.selectedItems():
+            self.showQWC2_button.setEnabled(True)
+        else:
+            self.showQWC2_button.setEnabled(False)
 
     def open_project(self):
         theme = self.themes_listWidget.selectedItems()
@@ -547,3 +551,12 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
                 "Project Error: Couldn't open project with the"
                 " path: %s doesn't exist." % path,
                 "QWC2 Theme Manager", Qgis.Warning)
+
+    def open_qwc2(self):
+        theme = self.themes_listWidget.selectedItems()[0].data(Qt.UserRole)
+        url = os.path.join(
+            self.QWC2Url_lineEdit.text(), "?t=") + os.path.basename(
+                theme["url"])
+        if not url.startswith("http"):
+            url = "http://" + url
+        webbrowser.open(url)
