@@ -532,7 +532,13 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
         path = os.path.join(
             self.projectsDir_lineEdit.text(), project_name)
         if os.path.exists(path):
-            QgsProject.instance().read(path)
+            opened = QgsProject.instance().read(path)
+            if not opened:
+                QMessageBox.critical(
+                    None, "QWC2 Theme Manager",
+                    "Couldn't open the project of the selected theme.\n"
+                    "Check if you have the needed permissions to "
+                    "open the project.")
         else:
             QMessageBox.critical(
                 None, "QWC2 Theme Manager",
