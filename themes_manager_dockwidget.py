@@ -549,7 +549,7 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
                 "Couldn't find the project of the selected theme.")
             QgsMessageLog.logMessage(
                 "Project Error: Couldn't open project with the"
-                " path: %s doesn't exist." % path,
+                " path: %s." % path,
                 "QWC2 Theme Manager", Qgis.Warning)
 
     def open_qwc2(self):
