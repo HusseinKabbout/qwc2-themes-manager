@@ -257,6 +257,7 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
                 theme["index"] = index
                 item.setData(Qt.UserRole, theme)
                 self.themes_listWidget.addItem(item)
+        self.themes_listWidget.clearSelection()
 
     def reset_themes_config(self):
         self.reset_ui()
@@ -323,22 +324,20 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
         else:
             if "defaultPrintResolutions" in config.keys():
                 config.pop("defaultPrintResolutions")
-        if "themes" in config.keys() and "items" in config[
-                "themes"].keys():
+        if "themes" in config.keys() and "items" in config["themes"].keys():
             for theme in config["themes"]["items"]:
                 if "default" in theme.keys():
                     theme.pop("default")
-                else:
-                    if "title" in theme.keys():
-                        if self.defaultTheme_comboBox.currentText() == theme[
-                                "title"]:
-                            theme["default"] = True
-                            continue
-                    elif "url" in theme.keys():
-                        title = os.path.basename(theme["url"])
-                        if self.defaultTheme_comboBox.currentText() == title:
-                            theme["default"] = True
-                            continue
+                if "title" in theme.keys():
+                    if self.defaultTheme_comboBox.currentText() == theme[
+                            "title"]:
+                        theme["default"] = True
+                        continue
+                elif "url" in theme.keys():
+                    title = os.path.basename(theme["url"])
+                    if self.defaultTheme_comboBox.currentText() == title:
+                        theme["default"] = True
+                        continue
         try:
             themes_config = open(path, 'w')
             themes_config.write(json.dumps(config, indent=2))

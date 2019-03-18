@@ -155,7 +155,9 @@ class ThemeSettingsDialog(QDialog, FORM_CLASS):
                     "themes"].keys():
                 config["themes"] = {"items": []}
             if self.index is not None:
-                config["themes"]["items"].pop(self.index)
+                old_theme = config["themes"]["items"].pop(self.index)
+                if "default" in old_theme.keys():
+                    new_theme["default"] = old_theme["default"]
             config["themes"]["items"].append(new_theme)
             themes_config.close()
             themes_config = open(path, "w", encoding="utf-8")
