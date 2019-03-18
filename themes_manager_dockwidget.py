@@ -77,6 +77,7 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
         self.editTheme_button.clicked.connect(
             lambda: self.create_or_edit_theme("edit"))
         self.deleteTheme_button.clicked.connect(self.delete_theme)
+        self.openProject_button.clicked.connect(self.open_project)
 
         self.set_qwc2_dir_path(self.settings.value(
             "qwc2-themes-manager/qwc2_directory"))
@@ -519,3 +520,24 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
         self.editTheme_button.setEnabled(True)
         self.deleteTheme_button.setEnabled(True)
         self.openProject_button.setEnabled(True)
+
+    def open_project(self):
+        theme = self.themes_listWidget.selectedItems()
+        if not theme:
+            QMessageBox.warning(None, "QWC2 Theme Manager",
+                                "No theme selected.")
+            return
+        project_name = os.path.basename(
+            theme[0].data(Qt.UserRole)["url"]) + ".qgs"
+        path = os.path.join(
+            self.projectsDir_lineEdit.text(), project_name)
+        if os.path.exists(path):
+            QgsProject.instance().read(path)
+        else:
+            QMessageBox.critical(
+                None, "QWC2 Theme Manager",
+                "Couldn't find the project of the selected theme.")
+            QgsMessageLog.logMessage(
+                "Project Error: Couldn't open project with the"
+                " path: %s doesn't exist." % path,
+                "QWC2 Theme Manager", Qgis.Warning)
