@@ -120,7 +120,8 @@ class ThemeSettingsDialog(QDialog, FORM_CLASS):
                     new_theme[child_name] = True
         new_theme["url"] = self.url_lineEdit.text()
         new_theme["title"] = self.title_lineEdit.text() \
-            if self.title_lineEdit.text() else QgsProject.instance().baseName()
+            if self.title_lineEdit.text() else os.path.basename(
+                self.url_lineEdit.text())
         if self.thumbnail_lineEdit.text() and self.copy_thumbnail(
                 self.thumbnail_lineEdit.text()):
             new_theme["thumbnail"] = os.path.basename(
@@ -224,6 +225,18 @@ class ThemeSettingsDialog(QDialog, FORM_CLASS):
             "assets/img/mapthumbs/" + os.path.basename(img_path))
         if os.path.exists(assets_path):
             return True
+        elif not os.path.exists(os.path.join(self.settings.value(
+                "qwc2-themes-manager/qwc2_directory"),
+                "assets/img/mapthumbs/")):
+            QMessageBox.critical(
+                None, "QWC2 Theme Manager: Thumbnail directory not found",
+                "The thumbnail directory couldn't be found.\n"
+                "Please check your QWC2 installation!")
+            QgsMessageLog.logMessage(
+                "The thumbnail directory couldn't be found.\n"
+                "Please check your QWC2 installation!",
+                "QWC2 Theme Manager", Qgis.Critical)
+            return False
         try:
             copyfile(img_path, assets_path)
         except PermissionError:
@@ -235,6 +248,8 @@ class ThemeSettingsDialog(QDialog, FORM_CLASS):
                 "Permission Error: Couln't copy thumbnail picture "
                 "to the path: %s." % assets_path,
                 "QWC2 Theme Manager", Qgis.Critical)
+            self.thumbnail_lineEdit.setStyleSheet(
+                "background: #FF7777; color: #FFFFFF;")
             return False
         except FileNotFoundError:
             QMessageBox.critical(
@@ -244,6 +259,8 @@ class ThemeSettingsDialog(QDialog, FORM_CLASS):
                 "FileNotFoundError: The path: %s "
                 "does not exist." % img_path,
                 "QWC2 Theme Manager", Qgis.Critical)
+            self.thumbnail_lineEdit.setStyleSheet(
+                "background: #FF7777; color: #FFFFFF;")
             return False
         return True
 

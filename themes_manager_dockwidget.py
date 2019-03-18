@@ -46,6 +46,7 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
 
         self.buttonBox.button(QDialogButtonBox.Retry).setText("Refresh")
 
+        QgsProject.instance().readProject.connect(self.enable_publish)
         self.qwc2Dir_button.clicked.connect(
             lambda: self.open_file_browser(self.qwc2Dir_lineEdit))
         self.qwc2Dir_lineEdit.textChanged.connect(
@@ -54,8 +55,11 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
             lambda: self.open_file_browser(self.projectsDir_lineEdit))
         self.projectsDir_lineEdit.textChanged.connect(
             lambda: self.check_path(self.projectsDir_lineEdit))
+        self.QWC2Url_lineEdit.editingFinished.connect(self.enable_qwc2_button)
         self.buttonBox.button(QDialogButtonBox.Save).clicked.connect(
             self.save_themes_config)
+        self.buttonBox.button(QDialogButtonBox.Save).clicked.connect(
+            self.save_paths)
         self.buttonBox.button(QDialogButtonBox.Retry).clicked.connect(
             self.load_themes_config)
         self.buttonBox.button(QDialogButtonBox.Reset).clicked.connect(
@@ -77,6 +81,7 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
         self.set_projects_dir_path(self.settings.value(
             "qwc2-themes-manager/project_directory"))
         self.set_qwc2_url(self.settings.value("qwc2-themes-manager/qwc2_url"))
+        self.tabWidget.currentChanged.connect(self.save_paths)
 
         self.load_themes_config()
 
@@ -92,6 +97,7 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
         if os.path.isdir(self.qwc2Dir_lineEdit.text()) and os.path.isdir(
                 self.projectsDir_lineEdit.text()):
             self.tabWidget.setTabEnabled(0, True)
+            self.enable_qwc2_button()
         else:
             self.tabWidget.setTabEnabled(0, False)
 
@@ -192,14 +198,14 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
 
         if "themes" in config.keys() and "items" in config["themes"].keys():
             self.fill_listView(config["themes"]["items"])
-            for item in config["themes"]["items"]:
-                if "default" in item.keys():
-                    if "title" in item.keys():
+            for theme in config["themes"]["items"]:
+                if "default" in theme.keys():
+                    if "title" in theme.keys():
                         self.defaultTheme_comboBox.setCurrentText(
-                            item["title"])
+                            theme["title"])
                         break
-                    else:
-                        title = os.path.basename(removed_theme["url"])
+                    elif "url" in theme.keys():
+                        title = os.path.basename(theme["url"])
                         self.defaultTheme_comboBox.setCurrentText(title)
                         break
         self.old_config = config
@@ -238,7 +244,9 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
                 item.setData(Qt.UserRole, theme)
                 self.themes_listWidget.addItem(item)
             else:
-                title = os.path.basename(removed_theme["url"])
+                if "url" not in theme.keys():
+                    continue
+                title = os.path.basename(theme["url"])
                 self.defaultTheme_comboBox.addItem(title)
                 item = QListWidgetItem(title)
                 theme["index"] = index
@@ -267,14 +275,14 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
         if "themes" in self.old_config.keys() and "items" in self.old_config[
                 "themes"].keys():
             self.fill_listView(self.old_config["themes"]["items"])
-            for item in self.old_config["themes"]["items"]:
-                if "default" in item.keys():
-                    if "title" in item.keys():
+            for theme in self.old_config["themes"]["items"]:
+                if "default" in theme.keys():
+                    if "title" in theme.keys():
                         self.defaultTheme_comboBox.setCurrentText(
-                            item["title"])
+                            theme["title"])
                         break
-                    else:
-                        title = os.path.basename(removed_theme["url"])
+                    elif "url" in theme.keys():
+                        title = os.path.basename(theme["url"])
                         self.defaultTheme_comboBox.setCurrentText(title)
                         break
 
@@ -312,19 +320,19 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
                 config.pop("defaultPrintResolutions")
         if "themes" in config.keys() and "items" in config[
                 "themes"].keys():
-            for item in config["themes"]["items"]:
-                if "default" in item.keys():
-                    item.pop("default")
+            for theme in config["themes"]["items"]:
+                if "default" in theme.keys():
+                    theme.pop("default")
                 else:
-                    if "title" in item.keys():
-                        if self.defaultTheme_comboBox.currentText() == item[
+                    if "title" in theme.keys():
+                        if self.defaultTheme_comboBox.currentText() == theme[
                                 "title"]:
-                            item["default"] = True
+                            theme["default"] = True
                             continue
-                    else:
-                        title = os.path.basename(removed_theme["url"])
+                    elif "url" in theme.keys():
+                        title = os.path.basename(theme["url"])
                         if self.defaultTheme_comboBox.currentText() == title:
-                            item["default"] = True
+                            theme["default"] = True
                             continue
         try:
             themes_config = open(path, 'w')
@@ -338,6 +346,7 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
             QgsMessageLog.logMessage(
                 "Permission Error: Cannot create/override file: %s." % path,
                 "QWC2 Theme Manager", Qgis.Critical)
+        self.gen_complete_config()
 
     def reset_ui(self):
         self.defaultScales_lineEdit.setText(
@@ -372,21 +381,8 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
         return True
 
     def create_or_edit_theme(self, method):
+        self.save_paths()
         if method == "create":
-            if not QgsProject.instance().baseName():
-                QMessageBox.warning(None, "QWC2 Theme Manager",
-                                    "No open project found.")
-                return
-                
-            for index in range(self.themes_listWidget.count()):
-                if os.path.basename(
-                        self.themes_listWidget.item(
-                            index).data(Qt.UserRole)[
-                                "url"]) == QgsProject.instance().baseName():
-
-                    QMessageBox.warning(None, "QWC2 Theme Manager",
-                                        "Opened project is already published.")
-                    return
             settings_dlg = self.theme_settings_dialog = ThemeSettingsDialog(
                 self.iface.mainWindow(), method, self.iface,
                 self.defaultTheme_comboBox.count())
@@ -407,6 +403,8 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
                 return
             self.load_themes_config()
             self.save_themes_config()
+        self.enable_publish()
+        self.gen_complete_config()
 
     def delete_theme(self):
         theme = self.themes_listWidget.selectedItems()
@@ -445,6 +443,8 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
             return
 
         self.load_themes_config()
+        self.enable_publish()
+        self.gen_complete_config()
 
         res = QMessageBox.question(
             None, "QWC2 Theme Manager",
@@ -470,5 +470,26 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
             return
         except FileNotFoundError:
             QgsMessageLog.logMessage(
-                "Delete project: The path: %s doesn't exist." % path,
+                "Delete project Error: The path: %s doesn't exist." % path,
                 "QWC2 Theme Manager", Qgis.Warning)
+
+    def enable_publish(self):
+        if not QgsProject.instance().baseName():
+            return
+        self.addTheme_button.setEnabled(True)
+        for index in range(self.themes_listWidget.count()):
+            if os.path.basename(
+                self.themes_listWidget.item(
+                    index).data(Qt.UserRole)[
+                        "url"]) == QgsProject.instance().baseName():
+                self.addTheme_button.setEnabled(False)
+
+    def enable_qwc2_button(self):
+        if self.QWC2Url_lineEdit.text():
+            self.showQWC2_button.setEnabled(True)
+        else:
+            self.showQWC2_button.setEnabled(False)
+
+    def gen_complete_config(self):
+        pass
+        # os.chdir(self.qwc2Dir_lineEdit.text())

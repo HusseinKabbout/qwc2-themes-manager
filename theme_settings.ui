@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>650</width>
+    <width>725</width>
     <height>585</height>
    </rect>
   </property>
@@ -15,7 +15,11 @@
   </property>
   <layout class="QGridLayout" name="gridLayout">
    <item row="0" column="2">
-    <widget class="QLineEdit" name="url_lineEdit"/>
+    <widget class="QLineEdit" name="url_lineEdit">
+     <property name="placeholderText">
+      <string>Example: http://qwc2.sourcepole.ch/wms/wolfsburg/qwc2_demo</string>
+     </property>
+    </widget>
    </item>
    <item row="6" column="2">
     <widget class="QgsProjectionSelectionWidget" name="mapCrs_widget"/>
