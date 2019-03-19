@@ -153,18 +153,19 @@ class ThemeSettingsDialog(QDialog, FORM_CLASS):
             "qwc2-themes-manager/qwc2_directory"), "themesConfig.json")
         try:
             themes_config = open(path, "r", encoding="utf-8")
-            config = json.load(themes_config)
-            if "themes" not in config.keys() or "items" not in config[
-                    "themes"].keys():
-                config["themes"] = {"items": []}
+            themes_dict = json.load(themes_config)
+            if "themes" not in themes_dict.keys() or \
+                    "items" not in themes_dict["themes"].keys():
+                themes_dict["themes"] = {"items": []}
             if self.index is not None:
-                old_theme = config["themes"]["items"].pop(self.index)
+                old_theme = themes_dict["themes"]["items"].pop(self.index)
                 if "default" in old_theme.keys():
                     new_theme["default"] = old_theme["default"]
-            config["themes"]["items"].append(new_theme)
+            themes_dict["themes"]["items"].append(new_theme)
             themes_config.close()
             themes_config = open(path, "w", encoding="utf-8")
-            themes_config.write(json.dumps(config, indent=2, sort_keys=True))
+            themes_config.write(json.dumps(themes_dict, indent=2,
+                                           sort_keys=True))
         except PermissionError:
             QMessageBox.critical(
                 None, "QWC2 Theme Manager: Permission Error",
@@ -279,7 +280,7 @@ class ThemeSettingsDialog(QDialog, FORM_CLASS):
             urlopen(url).read()
         except ValueError:
             QMessageBox.critical(None, "Invalid URL",
-                                 "The given wms URL is not valid.")
+                                 "The given WMS URL is not valid.")
             QgsMessageLog.logMessage(
                 "Invalid WMS URL: Couln't test WMS GetCapabilities "
                 "on the url: %s" % url,
@@ -287,7 +288,7 @@ class ThemeSettingsDialog(QDialog, FORM_CLASS):
             return False
         except HTTPError:
             QMessageBox.critical(None, "Invalid URL",
-                                 "The given wms URL is not valid.")
+                                 "The given WMS URL is not valid.")
             QgsMessageLog.logMessage(
                 "Invalid WMS URL: Couln't test WMS GetCapabilities "
                 "on the url: %s" % url,
@@ -295,7 +296,7 @@ class ThemeSettingsDialog(QDialog, FORM_CLASS):
             return False
         except URLError:
             QMessageBox.critical(None, "Invalid URL",
-                                 "The given wms URL is not valid.")
+                                 "The given WMS URL is not valid.")
             QgsMessageLog.logMessage(
                 "Invalid WMS URL: Couln't test WMS GetCapabilities "
                 "on the url: %s" % url,
@@ -305,13 +306,13 @@ class ThemeSettingsDialog(QDialog, FORM_CLASS):
 
     def save_project(self):
         project_path = QgsProject.instance().absoluteFilePath()
-        project_dir_path = os.path.join(self.settings.value(
+        projects_dir_path = os.path.join(self.settings.value(
             "qwc2-themes-manager/project_directory"),
             os.path.basename(project_path))
-        if os.path.exists(project_dir_path):
+        if os.path.exists(projects_dir_path):
             return True
         try:
-            copyfile(project_path, project_dir_path)
+            copyfile(project_path, projects_dir_path)
         except PermissionError:
             QMessageBox.critical(
                 None, "QWC2 Theme Manager: Permission Error",
@@ -319,7 +320,7 @@ class ThemeSettingsDialog(QDialog, FORM_CLASS):
                 "\nInsufficient permissions!")
             QgsMessageLog.logMessage(
                 "Permission Error: Couldn't copy project to"
-                " the path: %s." % project_dir_path,
+                " the path: %s." % projects_dir_path,
                 "QWC2 Theme Manager", Qgis.Critical)
             return False
         return True
