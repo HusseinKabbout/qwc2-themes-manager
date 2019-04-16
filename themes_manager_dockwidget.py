@@ -65,8 +65,6 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
             self.save_paths)
         self.buttonBox.button(QDialogButtonBox.Retry).clicked.connect(
             self.load_themes_config)
-        self.buttonBox.button(QDialogButtonBox.Reset).clicked.connect(
-            self.reset_themes_config)
         self.defaultScales_lineEdit.textChanged.connect(
             lambda: self.check_numbers(self.defaultScales_lineEdit))
         self.defaultPrintScales_lineEdit.textChanged.connect(
@@ -90,23 +88,6 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
 
         self.activate_themes_tab()
 
-    def check_path(self, lineEdit):
-        if os.path.isdir(lineEdit.text()) and self.check_permissions(
-                lineEdit.text()):
-            lineEdit.setStyleSheet("background: #FFFFFF; color: #000000;")
-        else:
-            lineEdit.setStyleSheet("background: #FF7777; color: #FFFFFF;")
-
-        self.activate_themes_tab()
-
-    def activate_themes_tab(self):
-        style = "background: #FFFFFF; color: #000000;"
-        if self.qwc2Dir_lineEdit.styleSheet() == style and \
-                self.projectsDir_lineEdit.styleSheet() == style:
-            self.tabWidget.setTabEnabled(0, True)
-        else:
-            self.tabWidget.setTabEnabled(0, False)
-
     def set_qwc2_dir_path(self, path):
         self.qwc2Dir_lineEdit.setText(path)
 
@@ -123,6 +104,15 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
         if path:
             lineEdit.setText(path)
 
+    def check_path(self, lineEdit):
+        if os.path.isdir(lineEdit.text()) and self.check_permissions(
+                lineEdit.text()):
+            lineEdit.setStyleSheet("background: #FFFFFF; color: #000000;")
+        else:
+            lineEdit.setStyleSheet("background: #FF7777; color: #FFFFFF;")
+
+        self.activate_themes_tab()
+
     def save_paths(self):
         self.settings.setValue("qwc2-themes-manager/qwc2_directory",
                                self.qwc2Dir_lineEdit.text())
@@ -132,23 +122,59 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
                                self.qwc2Url_lineEdit.text())
         self.load_themes_config()
 
-    def read_themes_config(self, path):
-        try:
-            themes_config = open(path, "r", encoding="utf-8")
-        except PermissionError:
-            QMessageBox.critical(
-                None, "QWC2 Theme Manager: Permission Error",
-                "Cannot open themes configuration file"
-                "\nInsufficient permissions!")
-            QgsMessageLog.logMessage(
-                "Permission Error: Cannot open file: %s." % path,
-                "QWC2 Theme Manager", Qgis.Critical)
-            self.deactivate_themes_tab()
-            return None
-        except FileNotFoundError:
-            return self.create_new_themes_config(path)
+    def activate_themes_tab(self):
+        style = "background: #FFFFFF; color: #000000;"
+        if self.qwc2Dir_lineEdit.styleSheet() == style and \
+                self.projectsDir_lineEdit.styleSheet() == style:
+            self.tabWidget.setTabEnabled(0, True)
+        else:
+            self.tabWidget.setTabEnabled(0, False)
 
-        return themes_config
+    def deactivate_themes_tab(self):
+        for child in self.themes_tab.children():
+            if isinstance(child, QGridLayout):
+                continue
+            child.setEnabled(False)
+        self.defaultScales_lineEdit.setText("")
+        self.buttonBox.setEnabled(True)
+        self.buttonBox.button(QDialogButtonBox.Save).setEnabled(False)
+
+    def load_themes_config(self):
+        themes_dict = self.check_config()
+        if themes_dict is None:
+            return
+        for child in self.themes_tab.children():
+            child.setEnabled(True)
+        self.buttonBox.button(QDialogButtonBox.Save).setEnabled(True)
+        self.reset_ui()
+
+        if "defaultScales" in themes_dict:
+            self.defaultScales_lineEdit.setText(
+                ",".join(str(num) for num in themes_dict["defaultScales"]))
+
+        if "defaultPrintScales" in themes_dict:
+            self.defaultPrintScales_lineEdit.setText(
+                ",".join(
+                    str(num) for num in themes_dict["defaultPrintScales"]))
+
+        if "defaultPrintResolutions" in themes_dict:
+            self.defaultPrintResolutions_lineEdit.setText(
+                ",".join(str(num) for num in themes_dict[
+                    "defaultPrintResolutions"]))
+
+        if "themes" in themes_dict.keys() and "items" in themes_dict[
+                "themes"].keys():
+            self.fill_listView(themes_dict["themes"]["items"])
+            for theme in themes_dict["themes"]["items"]:
+                if "default" in theme.keys():
+                    if "title" in theme.keys():
+                        self.defaultTheme_comboBox.setCurrentText(
+                            theme["title"])
+                        break
+                    elif "url" in theme.keys():
+                        title = os.path.basename(theme["url"])
+                        self.defaultTheme_comboBox.setCurrentText(title)
+                        break
 
     def check_config(self):
         path = os.path.join(self.qwc2Dir_lineEdit.text(), "themesConfig.json")
@@ -180,54 +206,23 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
         themes_config.close()
         return themes_dict
 
-    def load_themes_config(self):
-        themes_dict = self.check_config()
-        if themes_dict is None:
-            return
-        for child in self.themes_tab.children():
-            child.setEnabled(True)
-        self.buttonBox.button(QDialogButtonBox.Save).setEnabled(True)
-        self.buttonBox.button(QDialogButtonBox.Reset).setEnabled(True)
-        self.reset_ui()
+    def read_themes_config(self, path):
+        try:
+            themes_config = open(path, "r", encoding="utf-8")
+        except PermissionError:
+            QMessageBox.critical(
+                None, "QWC2 Theme Manager: Permission Error",
+                "Cannot open themes configuration file"
+                "\nInsufficient permissions!")
+            QgsMessageLog.logMessage(
+                "Permission Error: Cannot open file: %s." % path,
+                "QWC2 Theme Manager", Qgis.Critical)
+            self.deactivate_themes_tab()
+            return None
+        except FileNotFoundError:
+            return self.create_new_themes_config(path)
 
-        if "defaultScales" in themes_dict:
-            self.defaultScales_lineEdit.setText(
-                ",".join(str(num) for num in themes_dict["defaultScales"]))
-
-        if "defaultPrintScales" in themes_dict:
-            self.defaultPrintScales_lineEdit.setText(
-                ",".join(
-                    str(num) for num in themes_dict["defaultPrintScales"]))
-
-        if "defaultPrintResolutions" in themes_dict:
-            self.defaultPrintResolutions_lineEdit.setText(
-                ",".join(str(num) for num in themes_dict[
-                    "defaultPrintResolutions"]))
-
-        if "themes" in themes_dict.keys() and "items" in themes_dict[
-                "themes"].keys():
-            self.fill_listView(themes_dict["themes"]["items"])
-            for theme in themes_dict["themes"]["items"]:
-                if "default" in theme.keys():
-                    if "title" in theme.keys():
-                        self.defaultTheme_comboBox.setCurrentText(
-                            theme["title"])
-                        break
-                    elif "url" in theme.keys():
-                        title = os.path.basename(theme["url"])
-                        self.defaultTheme_comboBox.setCurrentText(title)
-                        break
-        self.old_themes_dict = themes_dict
-
-    def deactivate_themes_tab(self):
-        for child in self.themes_tab.children():
-            if isinstance(child, QGridLayout):
-                continue
-            child.setEnabled(False)
-        self.defaultScales_lineEdit.setText("")
-        self.buttonBox.setEnabled(True)
-        self.buttonBox.button(QDialogButtonBox.Save).setEnabled(False)
-        self.buttonBox.button(QDialogButtonBox.Reset).setEnabled(False)
+        return themes_config
 
     def create_new_themes_config(self, path):
         try:
@@ -271,41 +266,6 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
                 list_item.setData(Qt.UserRole, theme)
                 self.themes_listWidget.addItem(list_item)
         self.themes_listWidget.clearSelection()
-
-    def reset_themes_config(self):
-        self.reset_ui()
-        if "defaultScales" in self.old_themes_dict:
-            self.defaultScales_lineEdit.setText(
-                ",".join(
-                    str(num) for num in self.old_themes_dict["defaultScales"]))
-
-        if "defaultPrintScales" in self.old_themes_dict:
-            self.defaultPrintScales_lineEdit.setText(
-                ",".join(
-                    str(num) for num in self.old_themes_dict[
-                        "defaultPrintScales"]))
-
-        if "defaultPrintResolutions" in self.old_themes_dict:
-            self.defaultPrintResolutions_lineEdit.setText(
-                ",".join(
-                    str(num) for num in self.old_themes_dict[
-                        "defaultPrintResolutions"]))
-
-        self.defaultTheme_comboBox.clear()
-        if "themes" in self.old_themes_dict.keys() and \
-           "items" in self.old_themes_dict[
-                "themes"].keys():
-            self.fill_listView(self.old_themes_dict["themes"]["items"])
-            for theme in self.old_themes_dict["themes"]["items"]:
-                if "default" in theme.keys():
-                    if "title" in theme.keys():
-                        self.defaultTheme_comboBox.setCurrentText(
-                            theme["title"])
-                        break
-                    elif "url" in theme.keys():
-                        title = os.path.basename(theme["url"])
-                        self.defaultTheme_comboBox.setCurrentText(title)
-                        break
 
     def save_themes_config(self):
         if not self.checks_before_saving():
@@ -371,44 +331,6 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
                 "QWC2 Theme Manager", Qgis.Critical)
         self.gen_complete_config()
         self.load_themes_config()
-
-    def reset_ui(self):
-        self.defaultScales_lineEdit.setText(
-            "1000000,500000,250000,100000,50000,"
-            "25000,10000,5000,2500,1000,500")
-        self.defaultPrintScales_lineEdit.setText("")
-        self.defaultPrintResolutions_lineEdit.setText("")
-        self.defaultTheme_comboBox.clear()
-        self.themes_listWidget.clear()
-
-    def check_numbers(self, lineEdit):
-        numbers_list = lineEdit.text()
-        if not numbers_list:
-            lineEdit.setStyleSheet("background: #FFFFFF; color: #000000;")
-            return
-        for number in numbers_list.split(","):
-            if number.isdigit():
-                continue
-            else:
-                lineEdit.setStyleSheet("background: #FF7777; color: #FFFFFF;")
-                return
-        lineEdit.setStyleSheet("background: #FFFFFF; color: #000000;")
-
-    def check_permissions(self, path):
-        if os.access(path, os.R_OK) and os.access(path, os.W_OK):
-            return True
-        else:
-            return False
-
-    def checks_before_saving(self):
-        notok_style = "background: #FF7777; color: #FFFFFF;"
-        if self.defaultScales_lineEdit.styleSheet() == notok_style:
-            return False
-        elif self.defaultPrintScales_lineEdit.styleSheet() == notok_style:
-            return False
-        elif self.defaultPrintResolutions_lineEdit.styleSheet() == notok_style:
-            return False
-        return True
 
     def create_or_edit_theme(self, method):
         self.save_paths()
@@ -506,51 +428,6 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
                 "exist." % projects_dir_path,
                 "QWC2 Theme Manager", Qgis.Warning)
 
-    def enable_publish_button(self):
-        if not QgsProject.instance().baseName():
-            return
-        self.addTheme_button.setEnabled(True)
-        for index in range(self.themes_listWidget.count()):
-            if os.path.basename(
-                self.themes_listWidget.item(
-                    index).data(Qt.UserRole)[
-                        "url"]) == QgsProject.instance().baseName():
-                self.addTheme_button.setEnabled(False)
-
-    def gen_complete_config(self):
-        if self.themes_listWidget.count() == 0:
-            return
-        os.chdir(self.qwc2Dir_lineEdit.text())
-        script_path = os.path.join(os.path.dirname(__file__),
-                                   "themesConfig.py")
-        output = subprocess.Popen(['python3', script_path],
-                                  stdout=subprocess.PIPE,
-                                  stderr=subprocess.PIPE)
-
-        stdout, stderr = output.communicate()
-        if stderr.decode("utf-8"):
-            QMessageBox.warning(
-                None, "QWC2 Theme Manager",
-                "Couldn't generate themes.json\n"
-                "Please run the script: themesConfig.py manually to generate"
-                "the themes.json file.")
-            QgsMessageLog.logMessage(
-                "Python execution error: \n%s" % stderr.decode("utf-8"),
-                "QWC2 Theme Manager", Qgis.Critical)
-
-    def enable_buttons(self):
-        self.editTheme_button.setEnabled(True)
-        self.deleteTheme_button.setEnabled(True)
-        self.openProject_button.setEnabled(True)
-        self.enable_qwc2_button()
-
-    def enable_qwc2_button(self):
-        if self.qwc2Url_lineEdit.text() and \
-                self.themes_listWidget.selectedItems():
-            self.showQWC2_button.setEnabled(True)
-        else:
-            self.showQWC2_button.setEnabled(False)
-
     def open_project(self):
         theme = self.themes_listWidget.selectedItems()
         if not theme:
@@ -586,3 +463,86 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
         if not url.startswith("http"):
             url = "http://" + url
         webbrowser.open(url)
+
+    def reset_ui(self):
+        self.defaultScales_lineEdit.setText(
+            "1000000,500000,250000,100000,50000,"
+            "25000,10000,5000,2500,1000,500")
+        self.defaultPrintScales_lineEdit.setText("")
+        self.defaultPrintResolutions_lineEdit.setText("")
+        self.defaultTheme_comboBox.clear()
+        self.themes_listWidget.clear()
+
+    def check_numbers(self, lineEdit):
+        numbers_list = lineEdit.text()
+        if not numbers_list:
+            lineEdit.setStyleSheet("background: #FFFFFF; color: #000000;")
+            return
+        for number in numbers_list.split(","):
+            if number.isdigit():
+                continue
+            else:
+                lineEdit.setStyleSheet("background: #FF7777; color: #FFFFFF;")
+                return
+        lineEdit.setStyleSheet("background: #FFFFFF; color: #000000;")
+
+    def check_permissions(self, path):
+        if os.access(path, os.R_OK) and os.access(path, os.W_OK):
+            return True
+        else:
+            return False
+
+    def enable_publish_button(self):
+        if not QgsProject.instance().baseName():
+            return
+        self.addTheme_button.setEnabled(True)
+        for index in range(self.themes_listWidget.count()):
+            if os.path.basename(
+                self.themes_listWidget.item(
+                    index).data(Qt.UserRole)[
+                        "url"]) == QgsProject.instance().baseName():
+                self.addTheme_button.setEnabled(False)
+
+    def enable_buttons(self):
+        self.editTheme_button.setEnabled(True)
+        self.deleteTheme_button.setEnabled(True)
+        self.openProject_button.setEnabled(True)
+        self.enable_qwc2_button()
+
+    def enable_qwc2_button(self):
+        if self.qwc2Url_lineEdit.text() and \
+                self.themes_listWidget.selectedItems():
+            self.showQWC2_button.setEnabled(True)
+        else:
+            self.showQWC2_button.setEnabled(False)
+
+    def checks_before_saving(self):
+        notok_style = "background: #FF7777; color: #FFFFFF;"
+        if self.defaultScales_lineEdit.styleSheet() == notok_style:
+            return False
+        elif self.defaultPrintScales_lineEdit.styleSheet() == notok_style:
+            return False
+        elif self.defaultPrintResolutions_lineEdit.styleSheet() == notok_style:
+            return False
+        return True
+
+    def gen_complete_config(self):
+        if self.themes_listWidget.count() == 0:
+            return
+        os.chdir(self.qwc2Dir_lineEdit.text())
+        script_path = os.path.join(os.path.dirname(__file__),
+                                   "themesConfig.py")
+        output = subprocess.Popen(['python3', script_path],
+                                  stdout=subprocess.PIPE,
+                                  stderr=subprocess.PIPE)
+
+        stdout, stderr = output.communicate()
+        if stderr.decode("utf-8"):
+            QMessageBox.warning(
+                None, "QWC2 Theme Manager",
+                "Couldn't generate themes.json\n"
+                "Please run the script: themesConfig.py manually to generate"
+                "the themes.json file.")
+            QgsMessageLog.logMessage(
+                "Python execution error: \n%s" % stderr.decode("utf-8"),
+                "QWC2 Theme Manager", Qgis.Critical)

@@ -27,9 +27,9 @@
        <property name="geometry">
         <rect>
          <x>0</x>
-         <y>0</y>
-         <width>453</width>
-         <height>426</height>
+         <y>-57</y>
+         <width>438</width>
+         <height>454</height>
         </rect>
        </property>
        <layout class="QGridLayout" name="gridLayout_6">
@@ -184,7 +184,7 @@
             <item row="3" column="0">
              <widget class="QDialogButtonBox" name="buttonBox">
               <property name="standardButtons">
-               <set>QDialogButtonBox::Reset|QDialogButtonBox::Retry|QDialogButtonBox::Save</set>
+               <set>QDialogButtonBox::Retry|QDialogButtonBox::Save</set>
               </property>
              </widget>
             </item>
