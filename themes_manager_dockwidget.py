@@ -28,6 +28,7 @@ import webbrowser
 from qgis.PyQt import uic
 from qgis.PyQt.QtWidgets import *
 from qgis.PyQt.QtCore import *
+from qgis.PyQt.QtGui import *
 
 from qgis.core import *
 
@@ -85,6 +86,11 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
             "qwc2-themes-manager/project_directory"))
         self.set_qwc2_url(self.settings.value("qwc2-themes-manager/qwc2_url"))
         self.tabWidget.currentChanged.connect(self.save_paths)
+
+        self.qwc2Dir_button.setIcon(QIcon(
+            ":/images/themes/default/mActionFileOpen.svg"))
+        self.projectsDir_button.setIcon(QIcon(
+            ":/images/themes/default/mActionFileOpen.svg"))
 
         self.activate_themes_tab()
 

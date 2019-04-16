@@ -30,6 +30,7 @@ from qgis.gui import *
 from qgis.PyQt import *
 from qgis.PyQt.QtWidgets import *
 from qgis.PyQt.QtCore import *
+from qgis.PyQt.QtGui import *
 
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
@@ -57,6 +58,8 @@ class ThemeSettingsDialog(QDialog, FORM_CLASS):
         self.buttonBox.button(QDialogButtonBox.Apply).clicked.connect(
             self.save_theme)
         self.thumbnail_button.clicked.connect(self.open_thumbnail_fileBrowser)
+        self.thumbnail_button.setIcon(QIcon(
+            ":/images/themes/default/mActionFileOpen.svg"))
 
         self.prepate_dlg()
 

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>473</width>
-    <height>465</height>
+    <width>461</width>
+    <height>504</height>
    </rect>
   </property>
   <property name="accessibleName">
@@ -27,9 +27,9 @@
        <property name="geometry">
         <rect>
          <x>0</x>
-         <y>-57</y>
-         <width>438</width>
-         <height>454</height>
+         <y>0</y>
+         <width>441</width>
+         <height>456</height>
         </rect>
        </property>
        <layout class="QGridLayout" name="gridLayout_6">
@@ -39,7 +39,7 @@
            <bool>true</bool>
           </property>
           <property name="currentIndex">
-           <number>0</number>
+           <number>1</number>
           </property>
           <widget class="QWidget" name="themes_tab">
            <property name="enabled">
