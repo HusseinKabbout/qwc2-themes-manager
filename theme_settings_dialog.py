@@ -99,12 +99,13 @@ class ThemeSettingsDialog(QDialog, FORM_CLASS):
     def save_theme(self):
         if self.save_project() is not True:
             return
-        if not self.check_inputs():
-            return
         if not self.url_lineEdit.text():
             QMessageBox.warning(None, "Missing parameter",
                                 "WMS url of the project is missing!")
             return
+        if not self.check_inputs():
+            return
+
         new_theme = {}
         for child in self.children():
             child_name = child.objectName().split("_")[0]
@@ -308,14 +309,14 @@ class ThemeSettingsDialog(QDialog, FORM_CLASS):
         return True
 
     def save_project(self):
-        project_path = QgsProject.instance().absoluteFilePath()
         projects_dir_path = os.path.join(self.settings.value(
             "qwc2-themes-manager/project_directory"),
-            os.path.basename(project_path))
+            QgsProject.instance().baseName() + ".qgs")
         if os.path.exists(projects_dir_path):
             return True
+        QgsProject.instance().writeEntry("Paths", "/Absolute", True)
         try:
-            copyfile(project_path, projects_dir_path)
+            QgsProject.instance().write(projects_dir_path)
         except PermissionError:
             QMessageBox.critical(
                 None, "QWC2 Theme Manager: Permission Error",
