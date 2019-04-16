@@ -334,7 +334,6 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
         self.load_themes_config()
 
     def create_or_edit_theme(self, method):
-        self.save_paths()
         if method == "create":
             settings_dlg = self.theme_settings_dialog = ThemeSettingsDialog(
                 self.iface.mainWindow(), method, self.iface,
