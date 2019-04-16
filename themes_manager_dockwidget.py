@@ -88,11 +88,11 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
         self.set_qwc2_url(self.settings.value("qwc2-themes-manager/qwc2_url"))
         self.tabWidget.currentChanged.connect(self.save_paths)
 
-        self.load_themes_config()
         self.activate_themes_tab()
 
     def check_path(self, lineEdit):
-        if os.path.isdir(lineEdit.text()):
+        if os.path.isdir(lineEdit.text()) and self.check_permissions(
+                lineEdit.text()):
             lineEdit.setStyleSheet("background: #FFFFFF; color: #000000;")
         else:
             lineEdit.setStyleSheet("background: #FF7777; color: #FFFFFF;")
@@ -100,10 +100,10 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
         self.activate_themes_tab()
 
     def activate_themes_tab(self):
-        if os.path.isdir(self.qwc2Dir_lineEdit.text()) and os.path.isdir(
-                self.projectsDir_lineEdit.text()):
+        style = "background: #FFFFFF; color: #000000;"
+        if self.qwc2Dir_lineEdit.styleSheet() == style and \
+                self.projectsDir_lineEdit.styleSheet() == style:
             self.tabWidget.setTabEnabled(0, True)
-            self.load_themes_config()
         else:
             self.tabWidget.setTabEnabled(0, False)
 
@@ -130,6 +130,7 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
                                self.projectsDir_lineEdit.text())
         self.settings.setValue("qwc2-themes-manager/qwc2_url",
                                self.qwc2Url_lineEdit.text())
+        self.load_themes_config()
 
     def read_themes_config(self, path):
         try:
@@ -235,11 +236,16 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
         except PermissionError:
             QMessageBox.critical(
                 None, "QWC2 Theme Manager: Permission Error",
-                "Cannot override themes configuration file"
+                "Cannot create new themes configuration file."
                 "\nInsufficient permissions!")
             QgsMessageLog.logMessage(
                 "Permission Error: Cannot override file: %s." % path,
                 "QWC2 Theme Manager", Qgis.Critical)
+            return
+        except FileNotFoundError:
+            QgsMessageLog.logMessage(
+                "The Path: %s was not found." % path,
+                "QWC2 Theme Manager", Qgis.Info)
             return
         return open(path, 'r')
 
@@ -387,6 +393,12 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
                 lineEdit.setStyleSheet("background: #FF7777; color: #FFFFFF;")
                 return
         lineEdit.setStyleSheet("background: #FFFFFF; color: #000000;")
+
+    def check_permissions(self, path):
+        if os.access(path, os.R_OK) and os.access(path, os.W_OK):
+            return True
+        else:
+            return False
 
     def checks_before_saving(self):
         notok_style = "background: #FF7777; color: #FFFFFF;"
