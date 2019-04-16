@@ -274,11 +274,6 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
         self.themes_listWidget.clearSelection()
 
     def save_themes_config(self):
-        if not self.checks_before_saving():
-            QMessageBox.critical(None, "QWC2 Theme Manager",
-                                 "Some fields have incorrect inputs.\n"
-                                 "Please check all fields!")
-            return
         config_path = os.path.join(
             self.qwc2Dir_lineEdit.text(), "themesConfig.json")
         themes_config = self.read_themes_config(config_path)
@@ -483,13 +478,16 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
         numbers_list = lineEdit.text()
         if not numbers_list:
             lineEdit.setStyleSheet("background: #FFFFFF; color: #000000;")
+            self.activate_save_button()
             return
         for number in numbers_list.split(","):
             if number.isdigit():
                 continue
             else:
                 lineEdit.setStyleSheet("background: #FF7777; color: #FFFFFF;")
+                self.activate_save_button()
                 return
+        self.activate_save_button()
         lineEdit.setStyleSheet("background: #FFFFFF; color: #000000;")
 
     def check_permissions(self, path):
@@ -522,15 +520,16 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
         else:
             self.showQWC2_button.setEnabled(False)
 
-    def checks_before_saving(self):
+    def activate_save_button(self):
         notok_style = "background: #FF7777; color: #FFFFFF;"
         if self.defaultScales_lineEdit.styleSheet() == notok_style:
-            return False
+            self.buttonBox.button(QDialogButtonBox.Save).setEnabled(False)
         elif self.defaultPrintScales_lineEdit.styleSheet() == notok_style:
-            return False
+            self.buttonBox.button(QDialogButtonBox.Save).setEnabled(False)
         elif self.defaultPrintResolutions_lineEdit.styleSheet() == notok_style:
-            return False
-        return True
+            self.buttonBox.button(QDialogButtonBox.Save).setEnabled(False)
+        else:
+            self.buttonBox.button(QDialogButtonBox.Save).setEnabled(True)
 
     def gen_complete_config(self):
         if self.themes_listWidget.count() == 0:
