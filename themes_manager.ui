@@ -202,27 +202,88 @@
               </property>
              </widget>
             </item>
-            <item row="3" column="0">
-             <widget class="QLineEdit" name="projectsDir_lineEdit"/>
+            <item row="1" column="0">
+             <widget class="QLineEdit" name="qwc2Dir_lineEdit"/>
+            </item>
+            <item row="1" column="1">
+             <widget class="QToolButton" name="qwc2Dir_button">
+              <property name="text">
+               <string>...</string>
+              </property>
+             </widget>
             </item>
             <item row="2" column="0">
+             <widget class="QLabel" name="error_lbl_qwc2">
+              <property name="enabled">
+               <bool>true</bool>
+              </property>
+              <property name="font">
+               <font>
+                <pointsize>7</pointsize>
+                <weight>75</weight>
+                <bold>true</bold>
+               </font>
+              </property>
+              <property name="styleSheet">
+               <string notr="true">color: red;</string>
+              </property>
+              <property name="text">
+               <string>TextLabel</string>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="0">
              <widget class="QLabel" name="label_5">
               <property name="text">
                <string>Path to the QGIS Server publication directory (required)</string>
               </property>
              </widget>
             </item>
-            <item row="1" column="0">
-             <widget class="QLineEdit" name="qwc2Dir_lineEdit"/>
-            </item>
             <item row="4" column="0">
+             <widget class="QLineEdit" name="projectsDir_lineEdit"/>
+            </item>
+            <item row="4" column="1" rowspan="2">
+             <widget class="QToolButton" name="projectsDir_button">
+              <property name="text">
+               <string>...</string>
+              </property>
+             </widget>
+            </item>
+            <item row="5" column="0">
+             <widget class="QLabel" name="error_lbl_server">
+              <property name="enabled">
+               <bool>true</bool>
+              </property>
+              <property name="font">
+               <font>
+                <pointsize>7</pointsize>
+                <weight>75</weight>
+                <bold>true</bold>
+               </font>
+              </property>
+              <property name="styleSheet">
+               <string notr="true">color: red;</string>
+              </property>
+              <property name="text">
+               <string>TextLabel</string>
+              </property>
+             </widget>
+            </item>
+            <item row="6" column="0">
              <widget class="QLabel" name="label_7">
               <property name="text">
                <string>QWC2 URL (optional)</string>
               </property>
              </widget>
             </item>
-            <item row="6" column="1">
+            <item row="7" column="0">
+             <widget class="QLineEdit" name="qwc2Url_lineEdit">
+              <property name="text">
+               <string/>
+              </property>
+             </widget>
+            </item>
+            <item row="8" column="1">
              <spacer name="verticalSpacer">
               <property name="orientation">
                <enum>Qt::Vertical</enum>
@@ -234,27 +295,6 @@
                </size>
               </property>
              </spacer>
-            </item>
-            <item row="1" column="1">
-             <widget class="QToolButton" name="qwc2Dir_button">
-              <property name="text">
-               <string>...</string>
-              </property>
-             </widget>
-            </item>
-            <item row="3" column="1">
-             <widget class="QToolButton" name="projectsDir_button">
-              <property name="text">
-               <string>...</string>
-              </property>
-             </widget>
-            </item>
-            <item row="5" column="0">
-             <widget class="QLineEdit" name="qwc2Url_lineEdit">
-              <property name="text">
-               <string/>
-              </property>
-             </widget>
             </item>
            </layout>
           </widget>

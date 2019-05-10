@@ -54,11 +54,13 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
         self.qwc2Dir_button.clicked.connect(
             lambda: self.open_file_browser(self.qwc2Dir_lineEdit))
         self.qwc2Dir_lineEdit.textChanged.connect(
-            lambda: self.check_path(self.qwc2Dir_lineEdit))
+            lambda: self.check_path(self.qwc2Dir_lineEdit,
+                                    self.error_lbl_qwc2))
         self.projectsDir_button.clicked.connect(
             lambda: self.open_file_browser(self.projectsDir_lineEdit))
         self.projectsDir_lineEdit.textChanged.connect(
-            lambda: self.check_path(self.projectsDir_lineEdit))
+            lambda: self.check_path(self.projectsDir_lineEdit,
+                                    self.error_lbl_server))
         self.qwc2Url_lineEdit.editingFinished.connect(self.enable_qwc2_button)
         self.buttonBox.button(QDialogButtonBox.Save).clicked.connect(
             self.save_themes_config)
@@ -79,6 +81,9 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
         self.deleteTheme_button.clicked.connect(self.delete_theme)
         self.openProject_button.clicked.connect(self.open_project)
         self.showQWC2_button.clicked.connect(self.open_qwc2)
+
+        self.error_lbl_qwc2.setVisible(False)
+        self.error_lbl_server.setVisible(False)
 
         self.set_qwc2_dir_path(self.settings.value(
             "qwc2-themes-manager/qwc2_directory"))
@@ -110,11 +115,14 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
         if path:
             lineEdit.setText(path)
 
-    def check_path(self, lineEdit):
-        if os.path.isdir(lineEdit.text()) and self.check_permissions(
-                lineEdit.text()):
+    def check_path(self, lineEdit, label):
+        perm_ok, msg = self.check_permissions(lineEdit.text().strip())
+        if perm_ok:
+            label.setVisible(False)
             lineEdit.setStyleSheet("background: #FFFFFF; color: #000000;")
         else:
+            label.setVisible(True)
+            label.setText(msg)
             lineEdit.setStyleSheet("background: #FF7777; color: #FFFFFF;")
 
         self.activate_themes_tab()
@@ -490,10 +498,17 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
         lineEdit.setStyleSheet("background: #FFFFFF; color: #000000;")
 
     def check_permissions(self, path):
-        if os.access(path, os.R_OK) and os.access(path, os.W_OK):
-            return True
+        if not os.path.isdir(path):
+            msg = "This path does not exist"
+            return False, msg
+        elif not os.access(path, os.R_OK):
+            msg = "Insufficient permissions(read)"
+            return False, msg
+        elif not os.access(path, os.W_OK):
+            msg = "Insufficient permissions(write)"
+            return False, msg
         else:
-            return False
+            return True, None
 
     def enable_publish_button(self):
         if not QgsProject.instance().baseName():
