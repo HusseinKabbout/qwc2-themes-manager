@@ -16,6 +16,7 @@ import os
 import json
 import subprocess
 import webbrowser
+import requests
 from qgis.PyQt import uic
 from qgis.PyQt.QtWidgets import *
 from qgis.PyQt.QtCore import *
@@ -53,6 +54,9 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
             lambda: self.check_path(self.projectsDir_lineEdit,
                                     self.error_lbl_server))
         self.qwc2Url_lineEdit.editingFinished.connect(self.enable_qwc2_button)
+        self.qwc2Url_lineEdit.textChanged.connect(
+            lambda: self.check_path(self.qwc2Url_lineEdit,
+                                    self.error_lbl_url, url=True))
         self.buttonBox.button(QDialogButtonBox.Save).clicked.connect(
             self.save_themes_config)
         self.buttonBox.button(QDialogButtonBox.Save).clicked.connect(
@@ -75,6 +79,7 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
 
         self.error_lbl_qwc2.setVisible(False)
         self.error_lbl_server.setVisible(False)
+        self.error_lbl_url.setVisible(False)
 
         self.set_qwc2_dir_path(self.settings.value(
             "qwc2-themes-manager/qwc2_directory"))
@@ -106,15 +111,28 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
         if path:
             lineEdit.setText(path)
 
-    def check_path(self, lineEdit, label):
-        perm_ok, msg = self.check_permissions(lineEdit.text().strip())
-        if perm_ok:
-            label.setVisible(False)
-            lineEdit.setStyleSheet("background: #FFFFFF; color: #000000;")
+    def check_path(self, lineEdit, label, url=False):
+        if url is True:
+            url = lineEdit.text()
+            if not url.startswith("http"):
+                url = "http://" + url
+            try:
+                requests.get(url)
+                label.setVisible(False)
+                lineEdit.setStyleSheet("background: #FFFFFF; color: #000000;")
+            except:
+                label.setVisible(True)
+                label.setText("This url does not exist")
+                lineEdit.setStyleSheet("background: #FF7777; color: #FFFFFF;")
         else:
-            label.setVisible(True)
-            label.setText(msg)
-            lineEdit.setStyleSheet("background: #FF7777; color: #FFFFFF;")
+            perm_ok, msg = self.check_permissions(lineEdit.text().strip())
+            if perm_ok:
+                label.setVisible(False)
+                lineEdit.setStyleSheet("background: #FFFFFF; color: #000000;")
+            else:
+                label.setVisible(True)
+                label.setText(msg)
+                lineEdit.setStyleSheet("background: #FF7777; color: #FFFFFF;")
 
         self.activate_themes_tab()
 
@@ -130,7 +148,8 @@ class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
     def activate_themes_tab(self):
         style = "background: #FFFFFF; color: #000000;"
         if self.qwc2Dir_lineEdit.styleSheet() == style and \
-                self.projectsDir_lineEdit.styleSheet() == style:
+                self.projectsDir_lineEdit.styleSheet() == style \
+                and self.qwc2Url_lineEdit.styleSheet() == style:
             self.tabWidget.setTabEnabled(0, True)
         else:
             self.tabWidget.setTabEnabled(0, False)
