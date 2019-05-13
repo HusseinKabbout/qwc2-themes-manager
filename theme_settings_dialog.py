@@ -34,7 +34,7 @@ from qgis.PyQt.QtGui import *
 
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
-    os.path.dirname(__file__), 'theme_settings.ui'))
+    os.path.dirname(__file__), 'ui/theme_settings.ui'))
 
 
 class ThemeSettingsDialog(QDialog, FORM_CLASS):

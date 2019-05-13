@@ -35,7 +35,7 @@ from qgis.core import *
 from .theme_settings_dialog import ThemeSettingsDialog
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
-    os.path.dirname(__file__), 'themes_manager.ui'))
+    os.path.dirname(__file__), 'ui/themes_manager.ui'))
 
 
 class ThemeManagerDockWidget(QDockWidget, FORM_CLASS):
